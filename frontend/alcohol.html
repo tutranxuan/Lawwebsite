@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Tính nồng độ cồn</title>
+</head>
+<body>
+    <header class="main-header">
+        <img src="../2.jpg" alt="Header Background" class="header-bg-img">
+        <div class="header-flex">
+            <img src="../3.png" alt="Logo nhỏ" class="logo-img-small">
+            <div class="header-title-group">
+                <h1 class="site-title">Luật Giao thông Đường bộ</h1>
+                <div class="site-slogan">Kết nối, cung cấp thông tin và dịch vụ giao thông mọi lúc, mọi nơi</div>
+            </div>
+        </div>
+        <button id="btn-login-header" class="btn-login-header">Đăng nhập</button>
+    </header>
+    <nav class="main-nav">
+        <ul class="main-menu">
+            <li><a href="index.html"><span class="menu-icon">🏠</span> Thông tin & dịch vụ</a></li>
+            <li><a href="vbpl.html">Tra cứu VBPL</a></li>
+            <li class="menu-tools-parent">
+                <a href="#">Công cụ hỗ trợ</a>
+                <ul class="submenu-tools">
+                    <li><a href="alcohol.html" class="active">Tính nồng độ cồn</a></li>
+                    <li><a href="penalty.html">Tra cứu xử phạt</a></li>
+                    <li><a href="signs.html">Tra cứu biển báo</a></li>
+                </ul>
+            </li>
+            <li><a href="index.html#page-forms">Biểu mẫu & hướng dẫn</a></li>
+            <li><a href="community.html">Cộng đồng</a></li>
+        </ul>
+    </nav>
+    <main>
+        <h2 style="text-align:center; margin-top:24px; margin-bottom: 24px; color: #b94a48;">Tính nồng độ cồn</h2>
+        <section class="main-section">
+            <div class="alcohol-flex-row">
+                <form id="alcohol-form">
+                    <h3 class="alcohol-title" style="margin-bottom:20px;">Tính nồng độ cồn</h3>
+                    <div class="form-group">
+                        <label for="weight">Cân nặng (kg):</label>
+                        <input type="number" id="weight" name="weight" min="30" max="400" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Giới tính:</label>
+                        <select id="gender" name="gender" required>
+                            <option value="male">Nam</option>
+                            <option value="female">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="drink">Loại đồ uống:</label>
+                        <select id="drink" name="drink" required>
+                            <option value="beer">Bia (5%)</option>
+                            <option value="wine">Rượu vang (12%)</option>
+                            <option value="vodka">Rượu mạnh (40%)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Số lượng đã uống (ml):</label>
+                        <input type="number" id="amount" name="amount" min="0" max="10000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Thời gian từ khi uống (giờ):</label>
+                        <input type="number" id="time" name="time" min="0" max="24" value="1" required>
+                    </div>
+                    <button type="submit">Tính nồng độ cồn</button>
+                </form>
+                <div id="alcohol-result"></div>
+            </div>
+            <div id="alcohol-warning" class="alcohol-block-warning">
+                Thông tin mang tính chất tham khảo và có nhiều yếu tố khác ảnh hưởng đến kết quả đo nồng độ cồn, nên tốt nhất khi bạn đã uống rượu bia dù ít hay nhiều thì không nên lái xe để đảm bảo an toàn khi tham gia giao thông nhé!
+            </div>
+            <div id="alcohol-formula" class="alcohol-block-formula">
+                <b>Công thức tính nồng độ cồn chi tiết:</b><br>
+                <b>1. Đơn vị cồn (A):</b> <br>
+                &nbsp;&nbsp;A = (V x P x 0,79) / 10 (đvc)<br>
+                &nbsp;&nbsp;Trong đó:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;V: Dung tích đồ uống (ml)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;P: Nồng độ cồn (% theo thể tích)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;0,79: Hệ số quy đổi<br>
+                <b>2. Nồng độ cồn trong máu (BAC):</b><br>
+                &nbsp;&nbsp;BAC = 1056 x A / (W x R) (mg/100ml máu)<br>
+                &nbsp;&nbsp;Trong đó:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;A: Đơn vị cồn<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;W: Cân nặng (kg)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;R: Hệ số hấp thụ rượu (0,7 với nam, 0,6 với nữ)<br>
+                <b>3. Nồng độ cồn trong khí thở (BrAC):</b><br>
+                &nbsp;&nbsp;BrAC = BAC / 210 (mg/lít khí thở)<br>
+                <b>4. Thời gian hết cồn (T):</b><br>
+                &nbsp;&nbsp;T = BAC / 15 (giờ)
+            </div>
+            <div id="alcohol-penalty-table" class="alcohol-block-penalty"></div>
+        </section>
+    </main>
+    <!-- Modal Đăng nhập -->
+    <div id="login-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="close-login-modal">&times;</span>
+        <h2>Đăng nhập</h2>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-username">Tên đăng nhập</label>
+            <input type="text" id="login-username" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Mật khẩu</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="btn-primary">Đăng nhập</button>
+          <div class="form-link">Chưa có tài khoản? <a href="#" id="show-register">Đăng ký</a></div>
+        </form>
+      </div>
+    </div>
+    <!-- Modal Đăng ký -->
+    <div id="register-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="close-register-modal">&times;</span>
+        <h2>Đăng ký</h2>
+        <form id="register-form">
+          <div class="form-group">
+            <label for="register-username">Tên đăng nhập</label>
+            <input type="text" id="register-username" required>
+          </div>
+          <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" required>
+          </div>
+          <div class="form-group">
+            <label for="register-fullname">Họ tên</label>
+            <input type="text" id="register-fullname">
+          </div>
+          <div class="form-group">
+            <label for="register-password">Mật khẩu</label>
+            <input type="password" id="register-password" required>
+          </div>
+          <div class="form-group">
+            <label for="register-password2">Nhập lại mật khẩu</label>
+            <input type="password" id="register-password2" required>
+          </div>
+          <button type="submit" class="btn-primary">Đăng ký</button>
+          <div class="form-link">Đã có tài khoản? <a href="#" id="show-login">Đăng nhập</a></div>
+        </form>
+      </div>
+    </div>
+    <!-- Modal sửa thông tin cá nhân -->
+    <div id="edit-profile-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close" id="close-edit-profile-modal">&times;</span>
+        <h2>Sửa thông tin cá nhân</h2>
+        <form id="edit-profile-form">
+          <div class="form-group">
+            <label for="edit-fullname">Họ tên</label>
+            <input type="text" id="edit-fullname" name="full_name">
+          </div>
+          <div class="form-group">
+            <label for="edit-email">Email</label>
+            <input type="email" id="edit-email" name="email">
+          </div>
+          <div class="form-group">
+            <label for="edit-password">Mật khẩu mới (bỏ qua nếu không đổi)</label>
+            <input type="password" id="edit-password" name="password">
+          </div>
+          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+        </form>
+      </div>
+    </div>
+    <!-- Modal quản lý người dùng (admin) -->
+    <div id="manage-users-modal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:800px;">
+        <span class="close" id="close-manage-users-modal">&times;</span>
+        <h2>Quản lý người dùng</h2>
+        <table id="users-table" style="width:100%;margin-top:12px;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên đăng nhập</th>
+              <th>Email</th>
+              <th>Họ tên</th>
+              <th>Quyền</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Đặt icon và popup profile ra ngoài header/nav để tránh bị che -->
+    <div id="profile-icon" class="profile-icon" title="Hồ sơ cá nhân" style="display:none;">
+      <span>👤</span>
+    </div>
+    <div id="profile-username" class="profile-username" style="display:none;text-align:center;font-weight:500;color:#b26a00;margin-top:4px;"></div>
+    <div id="profile-popup" class="profile-popup" style="display:none;flex-direction:column;align-items:center;">
+      <button id="btn-edit-profile">Sửa thông tin cá nhân</button>
+      <button id="btn-logout">Đăng xuất</button>
+      <button id="btn-manage-users" style="display:none;">Quản lý người dùng</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 

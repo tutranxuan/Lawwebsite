@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết Văn bản Pháp luật</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="card" style="max-width: 800px; margin: 40px auto;">
+        <a href="index.html" style="color:#f7a600;">← Quay lại trang danh sách</a>
+        <h2 id="doc-title"></h2>
+        <p><b>Số hiệu:</b> <span id="doc-number"></span></p>
+        <p><b>Ngày ban hành:</b> <span id="doc-issuance"></span></p>
+        <p><b>Ngày hiệu lực:</b> <span id="doc-effective"></span></p>
+        <p><b>Cơ quan ban hành:</b> <span id="doc-authority"></span></p>
+        <p><b>Loại văn bản:</b> <span id="doc-type"></span></p>
+        <p><b>Tóm tắt:</b> <span id="doc-summary"></span></p>
+        <h3>Nội dung</h3>
+        <div id="pdf-viewer" style="margin-top: 24px;"></div>
+        <div id="upload-message" style="margin: 10px 0; color: #007700; font-weight: bold;"></div>
+        <div id="admin-upload-wrapper">
+            <form id="upload-form" enctype="multipart/form-data" style="margin-top: 24px;">
+                <input type="file" name="file" accept=".pdf" required>
+                <input type="hidden" name="doc_id" id="doc-id-hidden">
+                <button type="submit">Upload & Xem file PDF</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (!id) {
+            document.body.innerHTML = '<p>Không tìm thấy văn bản.</p>';
+        } else {
+            fetch(`http://localhost:4000/api/legal-documents/${id}`)
+                .then(res => res.json())
+                .then(doc => {
+                    if (!doc || doc.message) {
+                        document.body.innerHTML = '<p>Không tìm thấy văn bản.</p>';
+                        return;
+                    }
+                    document.getElementById('doc-title').textContent = doc.title || '';
+                    document.getElementById('doc-number').textContent = doc.document_number || '';
+                    document.getElementById('doc-issuance').textContent = doc.issuance_date ? new Date(doc.issuance_date).toLocaleDateString() : '';
+                    document.getElementById('doc-effective').textContent = doc.effective_date ? new Date(doc.effective_date).toLocaleDateString() : '';
+                    document.getElementById('doc-authority').textContent = doc.issuing_authority || '';
+                    document.getElementById('doc-type').textContent = doc.type_name || (doc.type && doc.type.type_name) || (doc.DocumentType && doc.DocumentType.type_name) || '';
+                    document.getElementById('doc-summary').textContent = doc.summary || '';
+                    // Ưu tiên hiển thị file_path_local nếu có
+                    let pdfPath = doc.file_path_local && doc.file_path_local.endsWith('.pdf') ? doc.file_path_local : (doc.file_path && doc.file_path.endsWith('.pdf') ? doc.file_path : null);
+                    if (pdfPath) {
+                        document.getElementById('pdf-viewer').innerHTML = `<iframe src="http://localhost:4000${pdfPath}" width="100%" height="600px" style="border:1px solid #ccc;"></iframe>`;
+                        document.getElementById('pdf-viewer').style.display = '';
+                    } else {
+                        document.getElementById('pdf-viewer').innerHTML = '';
+                    }
+                })
+                .catch(() => {
+                    document.body.innerHTML = '<p>Không tìm thấy văn bản.</p>';
+                });
+            document.getElementById('doc-id-hidden').value = id;
+        }
+        document.getElementById('upload-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            let message = '';
+            try {
+                const res = await fetch('http://localhost:4000/api/upload/file', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                // Xóa nội dung cũ
+                document.getElementById('pdf-viewer').innerHTML = '';
+
+                // Cập nhật nội dung mới
+                if (data.file_path_local) {
+                    // Gọi lại API lấy chi tiết văn bản để cập nhật pdf-viewer
+                    fetch(`http://localhost:4000/api/legal-documents/${id}`)
+                        .then(res => res.json())
+                        .then(doc => {
+                            let pdfPath = doc.file_path_local && doc.file_path_local.endsWith('.pdf') ? doc.file_path_local : (doc.file_path && doc.file_path.endsWith('.pdf') ? doc.file_path : null);
+                            if (pdfPath) {
+                                document.getElementById('pdf-viewer').innerHTML = `<iframe src="http://localhost:4000${pdfPath}" width="100%" height="600px" style="border:1px solid #ccc;"></iframe>`;
+                                document.getElementById('pdf-viewer').style.display = '';
+                            } else {
+                                document.getElementById('pdf-viewer').innerHTML = '';
+                            }
+                        });
+                    message = 'Upload file PDF thành công!';
+                } else {
+                    message = 'Không upload được file!';
+                }
+                document.getElementById('upload-message').style.color = '#007700';
+                document.getElementById('upload-message').textContent = message;
+            } catch (err) {
+                document.getElementById('upload-message').style.color = '#b94a48';
+                document.getElementById('upload-message').textContent = 'Upload thất bại!';
+            }
+        };
+        // Ẩn/hiện form upload theo quyền admin
+        (function() {
+            const user = localStorage.getItem('user');
+            const wrapper = document.getElementById('admin-upload-wrapper');
+            if (!user || JSON.parse(user).role !== 'Admin') {
+                if (wrapper) {
+                    wrapper.innerHTML = '<div style="color:#b94a48;font-weight:bold;margin-top:24px;">Chỉ quản trị viên mới được cập nhật nội dung chi tiết văn bản.</div>';
+                }
+            }
+        })();
+    </script>
+</body>
+</html> 
