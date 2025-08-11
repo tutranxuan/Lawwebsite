@@ -1,0 +1,182 @@
+
+CREATE TABLE Users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    full_name VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'User' CHECK (role IN ('User', 'Admin')),
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Banned'))
+);
+
+
+CREATE TABLE DocumentTypes (
+    type_id SERIAL PRIMARY KEY,
+    type_name VARCHAR(100) UNIQUE NOT NULL
+);
+
+
+CREATE TABLE TrafficSignCategories (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(100) UNIQUE NOT NULL
+);
+
+
+CREATE TABLE LegalDocuments (
+    doc_id SERIAL PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    document_number VARCHAR(100),
+    issuance_date DATE,
+    effective_date DATE,
+    issuing_authority VARCHAR(255),
+    summary TEXT,
+    content TEXT, 
+    file_path VARCHAR(500),
+    type_id INT REFERENCES DocumentTypes(type_id),
+    status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Amended', 'Repealed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE DiscussionTopics (
+    topic_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id), 
+    title VARCHAR(500) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'Open' CHECK (status IN ('Open', 'Closed', 'Deleted')),
+    views_count INT DEFAULT 0
+);
+
+-- Bảng: Comments (Bình luận)
+-- Lưu trữ các bình luận trong chủ đề thảo luận
+CREATE TABLE Comments (
+    comment_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id), -- Người bình luận
+    topic_id INT REFERENCES DiscussionTopics(topic_id),
+    parent_comment_id INT REFERENCES Comments(comment_id), -- Dùng cho bình luận trả lời (reply)
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'Published' CHECK (status IN ('Published', 'Pending', 'Deleted')),
+    likes_count INT DEFAULT 0 -- Số lượt thích
+);
+
+-- Bảng: Forms (Biểu mẫu)
+-- Lưu thông tin về các biểu mẫu liên quan
+CREATE TABLE Forms (
+    form_id SERIAL PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    file_path VARCHAR(500) NOT NULL,
+    related_document_id INT REFERENCES LegalDocuments(doc_id), -- Văn bản pháp luật liên quan
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bảng: Guidelines (Hướng dẫn Thủ tục)
+-- Lưu thông tin về các hướng dẫn, quy trình thủ tục
+CREATE TABLE Guidelines (
+    guideline_id SERIAL PRIMARY KEY,
+    title VARCHAR(500) NOT NULL,
+    content TEXT NOT NULL, -- Nội dung hướng dẫn chi tiết
+    related_document_id INT REFERENCES LegalDocuments(doc_id), -- Văn bản pháp luật liên quan
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bảng: TrafficSigns (Biển báo Giao thông)
+-- Lưu thông tin về các biển báo giao thông
+CREATE TABLE TrafficSigns (
+    sign_id SERIAL PRIMARY KEY,
+    sign_code VARCHAR(50) UNIQUE NOT NULL,
+    image_path VARCHAR(500) NOT NULL, -- Đường dẫn đến hình ảnh biển báo
+    description TEXT NOT NULL, -- Ý nghĩa của biển báo
+    category_id INT REFERENCES TrafficSignCategories(category_id),
+    related_document_id INT REFERENCES LegalDocuments(doc_id) -- Văn bản pháp luật quy định
+);
+
+-- Bảng: Violations (Hành vi Vi phạm)
+-- Mô tả các hành vi vi phạm giao thông đường bộ
+CREATE TABLE Violations (
+    violation_id SERIAL PRIMARY KEY,
+    violation_code VARCHAR(50) UNIQUE, -- Mã hiệu vi phạm (nếu có)
+    description TEXT NOT NULL, -- Mô tả chi tiết hành vi vi phạm
+    legal_basis_doc_id INT REFERENCES LegalDocuments(doc_id), -- Văn bản pháp luật là cơ sở
+    vehicle_type VARCHAR(50) DEFAULT 'All' CHECK (vehicle_type IN ('All', 'Motorbike', 'Car', 'Truck', 'Bicycle', 'Other')) -- Loại phương tiện áp dụng, có thể mở rộng
+);
+
+-- Bảng: Penalties (Mức xử phạt)
+-- Lưu thông tin về các mức phạt áp dụng cho hành vi vi phạm
+CREATE TABLE Penalties (
+    penalty_id SERIAL PRIMARY KEY,
+    violation_id INT REFERENCES Violations(violation_id),
+    penalty_type VARCHAR(50) NOT NULL CHECK (penalty_type IN ('Fine', 'LicenseSuspension', 'Impoundment', 'Warning', 'Other')), -- Loại hình phạt
+    min_amount DECIMAL(10, 2), -- Mức phạt tiền tối thiểu
+    max_amount DECIMAL(10, 2), -- Mức phạt tiền tối đa
+    duration_months INT, -- Thời gian tước quyền sử dụng (đối với tước GPLX)
+    details TEXT -- Chi tiết khác về hình phạt
+);
+
+-- Bảng: BACInfo (Thông tin Nồng độ cồn)
+-- Lưu trữ các ngưỡng nồng độ cồn cho mục đích tham khảo/tính toán
+CREATE TABLE BACInfo (
+    info_id SERIAL PRIMARY KEY,
+    vehicle_type VARCHAR(50) NOT NULL CHECK (vehicle_type IN ('Motorbike', 'Car', 'Truck', 'Bicycle', 'Other')),
+    limit_blood DECIMAL(10, 3), -- Ngưỡng nồng độ cồn trong máu (g/100ml)
+    limit_breath DECIMAL(10, 3), -- Ngưỡng nồng độ cồn trong khí thở (mg/l)
+    legal_basis_doc_id INT REFERENCES LegalDocuments(doc_id) -- Văn bản pháp luật quy định
+);
+
+-- (Tùy chọn) Thêm chỉ mục (Indexes) để cải thiện hiệu suất truy vấn
+CREATE INDEX idx_legal_documents_title ON LegalDocuments USING gin(to_tsvector('vietnamese', title)); -- Index cho tìm kiếm toàn văn trên tiêu đề
+CREATE INDEX idx_legal_documents_content ON LegalDocuments USING gin(to_tsvector('vietnamese', content)); -- Index cho tìm kiếm toàn văn trên nội dung
+CREATE INDEX idx_legal_documents_type ON LegalDocuments(type_id);
+CREATE INDEX idx_discussion_topics_user ON DiscussionTopics(user_id);
+CREATE INDEX idx_comments_topic ON Comments(topic_id);
+CREATE INDEX idx_comments_user ON Comments(user_id);
+CREATE INDEX idx_comments_parent ON Comments(parent_comment_id);
+CREATE INDEX idx_forms_related_doc ON Forms(related_document_id);
+CREATE INDEX idx_guidelines_related_doc ON Guidelines(related_document_id);
+CREATE INDEX idx_traffic_signs_category ON TrafficSigns(category_id);
+CREATE INDEX idx_traffic_signs_code ON TrafficSigns(sign_code);
+CREATE INDEX idx_violations_basis_doc ON Violations(legal_basis_doc_id);
+CREATE INDEX idx_violations_code ON Violations(violation_code);
+CREATE INDEX idx_penalties_violation ON Penalties(violation_id);
+
+-- (Tùy chọn) Trigger để tự động cập nhật updated_at
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = CURRENT_TIMESTAMP;
+   RETURN NEW;
+END;
+$$ language plpgsql;
+
+CREATE TRIGGER update_legal_documents_timestamp
+BEFORE UPDATE ON LegalDocuments
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE TRIGGER update_discussion_topics_timestamp
+BEFORE UPDATE ON DiscussionTopics
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE TRIGGER update_comments_timestamp
+BEFORE UPDATE ON Comments
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE TRIGGER update_guidelines_timestamp
+BEFORE UPDATE ON Guidelines
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
+
+CREATE TRIGGER update_violations_timestamp
+BEFORE UPDATE ON Violations
+FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp();
