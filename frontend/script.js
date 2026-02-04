@@ -483,6 +483,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 btnHidden.style.display = '';
                 btnHidden.onclick = function() {
                     window.currentTopicFilter = 'hidden';
+                    window.communityCurrentPage = 1;
                     loadCommunityTopics('hidden');
                     if (btnAllAdmin) btnAllAdmin.style.display = '';
                 };
@@ -491,6 +492,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 btnAllAdmin.style.display = 'none';
                 btnAllAdmin.onclick = function() {
                     window.currentTopicFilter = 'all';
+                    window.communityCurrentPage = 1;
                     loadCommunityTopics('all');
                     btnAllAdmin.style.display = 'none';
                 };
@@ -513,16 +515,19 @@ window.addEventListener('DOMContentLoaded', function() {
             if (btnAll) btnAll.style.display = 'none';
             if (btnFav) btnFav.onclick = function() {
                 window.currentTopicFilter = 'fav';
+                window.communityCurrentPage = 1;
                 loadCommunityTopics('fav');
                 if (btnAll) btnAll.style.display = '';
             };
             if (btnMy) btnMy.onclick = function() {
                 window.currentTopicFilter = 'my';
+                window.communityCurrentPage = 1;
                 loadCommunityTopics('my');
                 if (btnAll) btnAll.style.display = '';
             };
             if (btnAll) btnAll.onclick = function() {
                 window.currentTopicFilter = 'all';
+                window.communityCurrentPage = 1;
                 loadCommunityTopics('all');
                 btnAll.style.display = 'none';
             };
@@ -572,52 +577,88 @@ window.addEventListener('DOMContentLoaded', function() {
 // 2. Đảm bảo gọi showUserInfo() khi load ở mọi trang
 window.addEventListener('load', showUserInfo);
 
-// Hiển thị danh sách chủ đề (có lọc, phân quyền admin)
-async function loadCommunityTopics(filter = 'all') {
+// Phân trang: trang hiện tại, số topic mỗi trang
+window.communityCurrentPage = 1;
+window.communityLimit = 15;
+window.communityTotalPages = 1;
+window.communityTotal = 0;
+window.communityFavFilteredList = []; // Khi filter=fav, danh sách đã lọc (client-side)
+
+// Hiển thị danh sách chủ đề (có lọc, phân quyền admin, phân trang)
+async function loadCommunityTopics(filter = 'all', page) {
     const list = document.getElementById('topic-list');
+    const paginationEl = document.getElementById('topic-pagination');
     if (!list) return;
     list.innerHTML = '<li>Đang tải...</li>';
+    if (paginationEl) paginationEl.innerHTML = '';
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const currentPage = page != null ? page : window.communityCurrentPage;
+    window.communityCurrentPage = currentPage;
+
     try {
-        const res = await fetch('http://localhost:4000/api/topics');
-        let topics = await res.json();
-        allCommunityTopics = topics;
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
-        // Nếu là admin: luôn hiển thị tất cả bài viết
-        if (user && user.role === 'Admin') {
-            // Nếu filter là 'hidden', chỉ lấy bài Closed
-            if (window.currentTopicFilter === 'hidden') {
-                topics = topics.filter(topic => topic.status === 'Closed');
-            }
-            // Ngược lại, hiển thị tất cả (Open + Closed)
+        let topics = [];
+        let total = 0;
+        let totalPages = 1;
+
+        if (filter === 'fav') {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:4000/api/topics?page=1&limit=500&status=Open', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+            const data = await res.json();
+            const raw = data.topics || data;
+            const all = Array.isArray(raw) ? raw : [];
+            const currentUser = user;
+            window.communityFavFilteredList = all.filter(topic => {
+                if (currentUser && topic.liked !== undefined) return topic.liked;
+                const likeKey = currentUser ? `topic_like_${topic.topic_id}_${currentUser.user_id}` : `topic_like_${topic.topic_id}_guest`;
+                return localStorage.getItem(likeKey) === '1';
+            });
+            total = window.communityFavFilteredList.length;
+            totalPages = Math.ceil(total / window.communityLimit) || 1;
+            const start = (currentPage - 1) * window.communityLimit;
+            topics = window.communityFavFilteredList.slice(start, start + window.communityLimit);
         } else {
-            // User thường: chỉ hiển thị bài Open
-            topics = topics.filter(topic => topic.status === 'Open');
-            // Lọc theo filter như cũ
-            if (filter === 'fav') {
-                const currentUser = user;
-                topics = topics.filter(topic => {
-                    const likeKey = currentUser ? `topic_like_${topic.topic_id}_${currentUser.user_id}` : `topic_like_${topic.topic_id}_guest`;
-                    return localStorage.getItem(likeKey) === '1';
-                });
-            } else if (filter === 'my') {
-                if (user) topics = topics.filter(topic => topic.user_id === user.user_id);
-                else topics = [];
+            const status = (filter === 'hidden') ? 'Closed' : (user && user.role === 'Admin' ? 'all' : 'Open');
+            const mine = filter === 'my' ? '1' : '0';
+            const token = localStorage.getItem('token');
+            let url = `http://localhost:4000/api/topics?page=${currentPage}&limit=${window.communityLimit}&status=${status}&mine=${mine}`;
+            const res = await fetch(url, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+            const data = await res.json();
+            if (data.topics) {
+                topics = data.topics;
+                total = data.total || topics.length;
+                totalPages = data.totalPages || 1;
+            } else {
+                topics = Array.isArray(data) ? data : [];
+                total = topics.length;
+                totalPages = 1;
             }
         }
+
+        window.communityTotalPages = totalPages;
+        window.communityTotal = total;
+        allCommunityTopics = topics;
+
+        if (user && user.role === 'Admin' && filter === 'hidden') {
+            topics = topics.filter(topic => topic.status === 'Closed');
+        } else if (user && user.role !== 'Admin') {
+            topics = topics.filter(topic => topic.status === 'Open');
+        }
+
         if (!topics.length) {
             list.innerHTML = '<li>Không có chủ đề nào.</li>';
+            renderTopicPagination(0, 1, 1);
             return;
         }
         list.innerHTML = '';
         topics.forEach(topic => {
             const li = document.createElement('li');
-            const author = topic.User?.full_name || topic.User?.username || 'Ẩn danh';
-            const avatar = author.charAt(0).toUpperCase();
+            const authorDisplay = getAuthorDisplay(topic.User, 'topic-author author-muted', 'topic-avatar avatar-muted');
+            const author = authorDisplay.name;
             const created = new Date(topic.created_at).toLocaleString();
             const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
             const likeKey = currentUser ? `topic_like_${topic.topic_id}_${currentUser.user_id}` : `topic_like_${topic.topic_id}_guest`;
-            const liked = localStorage.getItem(likeKey) === '1';
-            let likeCount = parseInt(localStorage.getItem(`topic_like_count_${topic.topic_id}`) || topic.likes_count || 0);
+            const liked = topic.liked !== undefined ? topic.liked : (localStorage.getItem(likeKey) === '1');
+            let likeCount = topic.likes_count !== undefined && topic.likes_count !== null ? topic.likes_count : (parseInt(localStorage.getItem(`topic_like_count_${topic.topic_id}`), 10) || 0);
             if (liked && likeCount === 0) likeCount = 1;
             let deleteBtn = '';
             if ((user && topic.user_id === user.user_id) || (user && user.role === 'Admin')) {
@@ -631,18 +672,32 @@ async function loadCommunityTopics(filter = 'all') {
                     adminActionBtn = `<button class=\"topic-action-btn btn-restore\" data-topic-id=\"${topic.topic_id}\">Khôi phục</button>`;
                 }
             }
+            const images = topic.image_paths || [];
+            const videoUrl = topic.video_path || '';
+            let mediaPreview = '';
+            if (images.length || videoUrl) {
+                mediaPreview = '<div class="topic-card-media">';
+                if (images.length) mediaPreview += `<img src="${images[0]}" alt="" class="topic-card-media-thumb" data-lightbox-src="${images[0]}" data-lightbox-type="image">`;
+                if (videoUrl) mediaPreview += `<span class="topic-card-video-badge" data-lightbox-src="${videoUrl}" data-lightbox-type="video">🎬 Video</span>`;
+                mediaPreview += '</div>';
+            }
+            const userId = topic.User?.user_id;
+            const avatarBlock = userId
+                ? `<div class="topic-avatar-wrap user-profile-link" data-user-id="${userId}" title="Xem hồ sơ">${authorDisplay.avatarHtml}</div>`
+                : `<div class="topic-avatar avatar-muted">${authorDisplay.avatarHtml}</div>`;
             li.innerHTML = `
                 <div class=\"community-topic-card\" data-topic-id=\"${topic.topic_id}\" style=\"position:relative;\">
                     ${adminActionBtn ? `<div class=\"admin-action-btn-wrapper\" style=\"position:absolute;top:12px;right:12px;z-index:2;\">${adminActionBtn}</div>` : ''}
                     <div class=\"topic-card-header\">
-                        <div class=\"topic-avatar avatar-muted\">${avatar}</div>
+                        ${avatarBlock}
                         <div class=\"topic-meta\">
-                            <div class=\"topic-author author-muted\">${author}</div>
+                            <div class=\"topic-author-line\">${authorDisplay.authorSpan}</div>
                             <div class=\"topic-date\">${created}</div>
                         </div>
                     </div>
                     <div class=\"topic-card-title\">${topic.title}</div>
                     <div class=\"topic-card-content\">${topic.content.length > 120 ? topic.content.slice(0, 120) + '...' : topic.content}</div>
+                    ${mediaPreview}
                     <div class=\"topic-actions\">
                         <button class=\"topic-action-btn btn-like${liked ? ' liked' : ''}\" title=\"Thích\" data-topic-id=\"${topic.topic_id}\"> <span class=\"heart-icon\">${liked ? '💗' : '🤍'}</span> <span class=\"like-count\">${likeCount}</span></button>
                         <button class=\"topic-action-btn btn-comment\" title=\"Bình luận\" data-topic-id=\"${topic.topic_id}\"><span class=\"icon\">💬</span> <span class=\"comment-label\">Bình luận</span></button>
@@ -670,14 +725,27 @@ async function loadCommunityTopics(filter = 'all') {
                 loadCommunityTopics(window.currentTopicFilter || 'all');
             }
         });
-        // Like chủ đề: mỗi user có like riêng, cập nhật số lượt thích thực tế
+        // Like chủ đề: đã đăng nhập gọi API, chưa đăng nhập dùng localStorage
         list.querySelectorAll('.btn-like').forEach(btn => {
-            btn.onclick = function() {
+            btn.onclick = async function() {
                 const topicId = btn.getAttribute('data-topic-id');
                 const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-                const likeKey = currentUser ? `topic_like_${topicId}_${currentUser.user_id}` : `topic_like_${topicId}_guest`;
-                let likeCountSpan = btn.querySelector('.like-count');
-                let likeCount = parseInt(likeCountSpan.textContent) || 0;
+                const token = localStorage.getItem('token');
+                const likeCountSpan = btn.querySelector('.like-count');
+                if (currentUser && token) {
+                    try {
+                        const res = await fetch(`http://localhost:4000/api/topics/${topicId}/like`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                        const data = await res.json();
+                        if (res.ok && data.liked !== undefined) {
+                            btn.classList.toggle('liked', data.liked);
+                            btn.querySelector('.heart-icon').textContent = data.liked ? '💗' : '🤍';
+                            likeCountSpan.textContent = data.count != null ? data.count : likeCountSpan.textContent;
+                        }
+                    } catch (e) {}
+                    return;
+                }
+                const likeKey = `topic_like_${topicId}_guest`;
+                let likeCount = parseInt(likeCountSpan.textContent, 10) || 0;
                 const liked = localStorage.getItem(likeKey) === '1';
                 if (liked) {
                     localStorage.setItem(likeKey, '0');
@@ -721,18 +789,161 @@ async function loadCommunityTopics(filter = 'all') {
                     });
                     const data = await res.json();
                     if (!res.ok) return alert(data.message || 'Lỗi xóa bài viết');
-                    loadCommunityTopics(window.currentTopicFilter || 'all');
+                    loadCommunityTopics(window.currentTopicFilter || 'all', window.communityCurrentPage);
                 } catch (err) {
                     alert('Lỗi kết nối server');
                 }
             }
         });
+        list.querySelectorAll('[data-lightbox-src]').forEach(el => {
+            el.onclick = function() {
+                const src = this.getAttribute('data-lightbox-src');
+                const type = this.getAttribute('data-lightbox-type') || 'image';
+                if (src) openMediaLightbox(src, type);
+            };
+        });
+        list.querySelectorAll('.user-profile-link').forEach(el => {
+            el.onclick = function(e) {
+                e.preventDefault();
+                const uid = this.getAttribute('data-user-id');
+                if (uid) openUserProfileModal(uid);
+            };
+        });
+        renderTopicPagination(window.communityTotal, window.communityTotalPages, window.communityCurrentPage);
     } catch (e) {
         list.innerHTML = '<li>Lỗi tải chủ đề.</li>';
+        if (document.getElementById('topic-pagination')) document.getElementById('topic-pagination').innerHTML = '';
     }
 }
+
+function renderTopicPagination(total, totalPages, page) {
+    const paginationEl = document.getElementById('topic-pagination');
+    if (!paginationEl || totalPages <= 1 || total === 0) {
+        if (paginationEl) paginationEl.innerHTML = '';
+        return;
+    }
+    let html = '<span class="pagination-info">Trang ' + page + ' / ' + totalPages + ' (' + total + ' bài)</span>';
+    html += '<button type="button" class="btn-pagination-prev" ' + (page <= 1 ? 'disabled' : '') + '>Trước</button>';
+    for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+        html += '<button type="button" class="btn-pagination-num' + (i === page ? ' active' : '') + '" data-page="' + i + '">' + i + '</button>';
+    }
+    html += '<button type="button" class="btn-pagination-next" ' + (page >= totalPages ? 'disabled' : '') + '>Sau</button>';
+    paginationEl.innerHTML = html;
+    paginationEl.querySelector('.btn-pagination-prev').onclick = () => loadCommunityTopics(window.currentTopicFilter || 'all', page - 1);
+    paginationEl.querySelector('.btn-pagination-next').onclick = () => loadCommunityTopics(window.currentTopicFilter || 'all', page + 1);
+    paginationEl.querySelectorAll('.btn-pagination-num').forEach(btn => {
+        btn.onclick = () => loadCommunityTopics(window.currentTopicFilter || 'all', parseInt(btn.getAttribute('data-page')));
+    });
+}
+
+function openMediaLightbox(src, type) {
+    const lb = document.getElementById('media-lightbox');
+    const img = document.getElementById('media-lightbox-img');
+    const video = document.getElementById('media-lightbox-video');
+    if (!lb || !img || !video) return;
+    if (type === 'video') {
+        img.style.display = 'none';
+        video.style.display = 'block';
+        video.src = src;
+        video.play && video.play();
+    } else {
+        video.style.display = 'none';
+        video.pause();
+        video.src = '';
+        img.style.display = 'block';
+        img.src = src;
+    }
+    lb.style.display = 'flex';
+}
+function closeMediaLightbox() {
+    const lb = document.getElementById('media-lightbox');
+    const video = document.getElementById('media-lightbox-video');
+    if (lb) lb.style.display = 'none';
+    if (video) { video.pause(); video.src = ''; }
+}
+window.openMediaLightbox = openMediaLightbox;
+window.closeMediaLightbox = closeMediaLightbox;
+document.addEventListener('DOMContentLoaded', function() {
+    const lb = document.getElementById('media-lightbox');
+    const closeBtn = document.getElementById('media-lightbox-close');
+    if (closeBtn) closeBtn.onclick = closeMediaLightbox;
+    if (lb) lb.onclick = function(e) { if (e.target === lb) closeMediaLightbox(); };
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeMediaLightbox(); });
+});
 window.loadCommunityTopics = loadCommunityTopics;
 window.currentTopicFilter = 'all';
+
+// Helper: avatar + tên + tick (Admin xanh lá, Luật sư vàng), có thể click xem hồ sơ
+function getAuthorDisplay(user, cssClassTopic = 'topic-author author-muted', cssClassAvatar = 'topic-avatar avatar-muted') {
+    const name = user?.LawyerProfile?.full_name_legal || user?.full_name || user?.username || 'Ẩn danh';
+    const userId = user?.user_id;
+    let avatarHtml;
+    if (user?.role === 'Lawyer' && user?.LawyerProfile?.portrait_path) {
+        avatarHtml = `<img src="${user.LawyerProfile.portrait_path}" alt="" class="author-portrait ${cssClassAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        const letter = name.charAt(0).toUpperCase();
+        avatarHtml = `<span class="${cssClassAvatar}">${letter}</span>`;
+    }
+    let tickHtml = '';
+    const tickSvg = (color) => `<span class="role-tick-icon" style="display:inline-flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="${color}"/><path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M7 12l3 3 6-6"/></svg></span>`;
+    if (user?.role === 'Admin') tickHtml = '<span class="role-tick role-tick-admin" title="Quản trị viên">' + tickSvg('#2e7d32') + '<span class="role-tick-label">Admin</span></span>';
+    else if (user?.role === 'Lawyer' && user?.LawyerProfile) tickHtml = '<span class="role-tick role-tick-lawyer" title="Luật sư">' + tickSvg('#f9a825') + '<span class="role-tick-label">Luật sư</span></span>';
+    const authorSpan = userId
+        ? `<span class="user-profile-link ${cssClassTopic}" data-user-id="${userId}" title="Xem hồ sơ">${name}${tickHtml}</span>`
+        : `<span class="${cssClassTopic}">${name}${tickHtml}</span>`;
+    return { avatarHtml, authorSpan, name };
+}
+
+// Mở modal xem thông tin user/luật sư (click vào nick)
+async function openUserProfileModal(userId) {
+    const modal = document.getElementById('user-profile-detail-modal');
+    const body = document.getElementById('user-profile-detail-body');
+    if (!modal || !body) return;
+    body.innerHTML = 'Đang tải...';
+    modal.style.display = 'block';
+    try {
+        const res = await fetch(`http://localhost:4000/api/lawyers/public/${userId}`);
+        const data = await res.json();
+        if (!res.ok) {
+            body.innerHTML = data.message || 'Không tìm thấy thông tin.';
+            return;
+        }
+        const name = data.LawyerProfile?.full_name_legal || data.full_name || data.username || 'Ẩn danh';
+        let html = '<div class="user-profile-detail">';
+        html += '<div class="user-profile-header">';
+        if (data.LawyerProfile?.portrait_path) {
+            html += `<img src="${data.LawyerProfile.portrait_path}" alt="" class="user-profile-portrait">`;
+        }
+        html += `<div><strong>${escapeHtml(name)}</strong>`;
+        const tickSvg = (color) => `<span class="role-tick-icon" style="display:inline-flex;"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="${color}"/><path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M7 12l3 3 6-6"/></svg></span>`;
+        if (data.role === 'Admin') html += ' <span class="role-tick role-tick-admin" title="Quản trị viên">' + tickSvg('#2e7d32') + '<span class="role-tick-label">Admin</span>' + '</span>';
+        else if (data.role === 'Lawyer' && data.LawyerProfile) html += ' <span class="role-tick role-tick-lawyer" title="Luật sư">' + tickSvg('#f9a825') + '<span class="role-tick-label">Luật sư</span>' + '</span>';
+        html += '</div></div>';
+        if (data.role === 'Lawyer' && data.LawyerProfile) {
+            const p = data.LawyerProfile;
+            html += '<div class="user-profile-fields">';
+            if (p.specialization) html += `<p><b>Lĩnh vực:</b> ${escapeHtml(p.specialization)}</p>`;
+            if (p.years_experience != null) html += `<p><b>Kinh nghiệm:</b> ${p.years_experience} năm</p>`;
+            if (p.organization_name) html += `<p><b>Tổ chức hành nghề:</b> ${escapeHtml(p.organization_name)}</p>`;
+            if (p.bar_association) html += `<p><b>Đoàn Luật sư:</b> ${escapeHtml(p.bar_association)}</p>`;
+            if (p.bio) html += `<p><b>Giới thiệu:</b> ${escapeHtml(p.bio)}</p>`;
+            if (p.phone) html += `<p><b>Điện thoại:</b> ${escapeHtml(p.phone)}</p>`;
+            if (p.office_address) html += `<p><b>Địa chỉ văn phòng:</b> ${escapeHtml(p.office_address)}</p>`;
+            html += '</div>';
+        }
+        html += '</div>';
+        body.innerHTML = html;
+    } catch (err) {
+        body.innerHTML = 'Lỗi tải thông tin.';
+    }
+}
+function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+window.openUserProfileModal = openUserProfileModal;
 
 // Hàm dựng cây bình luận đa cấp
 function buildCommentTree(comments) {
@@ -756,22 +967,25 @@ function buildCommentTree(comments) {
 function renderCommentTree(comments, topicId, user, level = 0, parentVisible = true) {
     let html = '';
     comments.forEach(c => {
-        const author = c.User?.full_name || c.User?.username || 'Ẩn danh';
-        const avatar = author.charAt(0).toUpperCase();
+        const authorDisplay = getAuthorDisplay(c.User, 'reply-author', 'reply-avatar-inner');
         const created = new Date(c.created_at).toLocaleString();
         const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
         const likeKey = currentUser ? `comment_like_${c.comment_id}_${currentUser.user_id}` : `comment_like_${c.comment_id}_guest`;
-        const liked = localStorage.getItem(likeKey) === '1';
-        let likeCount = parseInt(localStorage.getItem(`comment_like_count_${c.comment_id}`) || c.likes_count || 0);
+        const liked = c.liked !== undefined ? c.liked : (localStorage.getItem(likeKey) === '1');
+        let likeCount = c.likes_count !== undefined && c.likes_count !== null ? c.likes_count : (parseInt(localStorage.getItem(`comment_like_count_${c.comment_id}`), 10) || 0);
         if (liked && likeCount === 0) likeCount = 1;
         let deleteBtn = '';
         if (user && (c.user_id === user.user_id || user.role === 'Admin')) {
             deleteBtn = `<button class="reply-action-btn btn-delete" title="Xóa bình luận" data-comment-id="${c.comment_id}">🗑️</button>`;
         }
+        const replyUserId = c.User?.user_id;
+        const replyAvatarBlock = replyUserId
+            ? `<div class="reply-avatar user-profile-link" data-user-id="${replyUserId}" title="Xem hồ sơ">${authorDisplay.avatarHtml}</div>`
+            : `<div class="reply-avatar">${authorDisplay.avatarHtml}</div>`;
         html += `<li class='reply-item${level>0?' reply-child':''}' style='margin-left:${level*28}px;'>
-            <div class='reply-avatar'>${avatar}</div>
+            ${replyAvatarBlock}
             <div class='reply-body'>
-                <div class='reply-author'>${author}</div>
+                <div class='reply-author-line'>${authorDisplay.authorSpan}</div>
                 <div class='reply-meta'>${created}</div>
                 <div class='reply-content'>${c.content}</div>
                 <div class='reply-actions'>
@@ -795,9 +1009,22 @@ function bindReplyChildEvents(container) {
         btn.onclick = async function() {
             const commentId = btn.getAttribute('data-comment-id');
             const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-            const likeKey = currentUser ? `comment_like_${commentId}_${currentUser.user_id}` : `comment_like_${commentId}_guest`;
-            let likeCountSpan = btn.querySelector('.like-count');
-            let likeCount = parseInt(likeCountSpan.textContent) || 0;
+            const token = localStorage.getItem('token');
+            const likeCountSpan = btn.querySelector('.like-count');
+            if (currentUser && token) {
+                try {
+                    const res = await fetch(`http://localhost:4000/api/comments/like/${commentId}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await res.json();
+                    if (res.ok && data.liked !== undefined) {
+                        btn.classList.toggle('liked', data.liked);
+                        btn.querySelector('.heart-icon').textContent = data.liked ? '💗' : '🤍';
+                        likeCountSpan.textContent = data.count != null ? data.count : likeCountSpan.textContent;
+                    }
+                } catch (e) {}
+                return;
+            }
+            const likeKey = `comment_like_${commentId}_guest`;
+            let likeCount = parseInt(likeCountSpan.textContent, 10) || 0;
             const liked = localStorage.getItem(likeKey) === '1';
             if (liked) {
                 localStorage.setItem(likeKey, '0');
@@ -840,17 +1067,31 @@ function bindReplyChildEvents(container) {
 // Hiển thị chi tiết chủ đề và bình luận đa cấp (inline)
 async function showTopicDetailInline(topicId, container) {
     container.innerHTML = 'Đang tải...';
+    window.currentTopicId = topicId;
     try {
-        const res = await fetch(`http://localhost:4000/api/topics/${topicId}`);
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch(`http://localhost:4000/api/topics/${topicId}`, { headers });
         const topic = await res.json();
-        if (!topic) {
+        if (!topic || (topic.message && res.status !== 200)) {
             container.innerHTML = 'Không tìm thấy chủ đề.';
             return;
         }
         const user = JSON.parse(localStorage.getItem('user') || 'null');
-        // Xây cây bình luận
         const commentTree = buildCommentTree(topic.Comments || []);
+        const images = topic.image_paths || [];
+        const videoUrl = topic.video_path || '';
         let html = `<div class='community-thread topic-detail-inline'>`;
+        if (images.length || videoUrl) {
+            html += '<div class="topic-detail-media">';
+            images.forEach(src => {
+                html += `<img src="${src}" alt="" class="topic-detail-img" data-lightbox-src="${src}" data-lightbox-type="image">`;
+            });
+            if (videoUrl) {
+                html += `<video class="topic-detail-video" controls preload="metadata" src="${videoUrl}" data-lightbox-src="${videoUrl}" data-lightbox-type="video"></video>`;
+            }
+            html += '</div>';
+        }
         html += `<div class='replies-title'>Bình luận</div>`;
         html += `<ul class='reply-list'>`;
         html += renderCommentTree(commentTree, topicId, user);
@@ -862,6 +1103,20 @@ async function showTopicDetailInline(topicId, container) {
         </form>`;
         html += `</div>`;
         container.innerHTML = html;
+        container.querySelectorAll('[data-lightbox-src]').forEach(el => {
+            el.onclick = function() {
+                const src = this.getAttribute('data-lightbox-src');
+                const type = this.getAttribute('data-lightbox-type') || 'image';
+                if (src) openMediaLightbox(src, type);
+            };
+        });
+        container.querySelectorAll('.user-profile-link').forEach(el => {
+            el.onclick = function(e) {
+                e.preventDefault();
+                const uid = this.getAttribute('data-user-id');
+                if (uid) openUserProfileModal(uid);
+            };
+        });
         // Gán sự kiện submit bình luận gốc
         const commentForm = document.getElementById(`comment-form-inline-${topicId}`);
         if (commentForm) {
@@ -945,25 +1200,33 @@ async function showTopicDetailInline(topicId, container) {
         container.querySelectorAll('.btn-like').forEach(btn => {
             btn.onclick = async function() {
                 const commentId = btn.getAttribute('data-comment-id');
-                const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-                const likeKey = currentUser ? `comment_like_${commentId}_${currentUser.user_id}` : `comment_like_${commentId}_guest`;
-                let likeCountSpan = btn.querySelector('.like-count');
-                let likeCount = parseInt(likeCountSpan.textContent) || 0;
-                const liked = localStorage.getItem(likeKey) === '1';
-                if (liked) {
-                    localStorage.setItem(likeKey, '0');
-                    btn.classList.remove('liked');
-                    btn.querySelector('.heart-icon').textContent = '🤍';
-                    likeCount = Math.max(0, likeCount - 1);
-                } else {
-                    localStorage.setItem(likeKey, '1');
-                    btn.classList.add('liked');
-                    btn.querySelector('.heart-icon').textContent = '💗';
-                    likeCount = likeCount + 1;
+        const token = localStorage.getItem('token');
+        const heartIcon = btn.querySelector('.heart-icon');
+        const likeCountSpan = btn.querySelector('.like-count');
+
+        
+        if (token) {
+            try {
+                const res = await fetch(`http://localhost:4000/api/comments/like/${commentId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    btn.classList.toggle('liked', data.liked);
+                    heartIcon.textContent = data.liked ? '💗' : '🤍';
+                    likeCountSpan.textContent = data.count;
+                    
+                    return; 
                 }
-                likeCountSpan.textContent = likeCount;
-                localStorage.setItem(`comment_like_count_${commentId}`, likeCount);
+            } catch (e) {
+                console.error("Lỗi gọi API Like:", e);
             }
+        } else {
+            alert("Vui lòng đăng nhập để thích bình luận!");
+        }
+    }
         });
         container.querySelectorAll('.btn-delete').forEach(btn => {
             btn.onclick = async function() {
@@ -1145,12 +1408,13 @@ const manageUsersModal = document.getElementById('manage-users-modal');
 const closeManageUsersModal = document.getElementById('close-manage-users-modal');
 const usersTableBody = document.querySelector('#users-table tbody');
 
-// Hiển thị tên user sau khi đăng nhập
+// Hiển thị tên user sau khi đăng nhập (avatar luật sư = ảnh chân dung)
 function showUserInfo() {
     const user = localStorage.getItem('user');
     const btn = document.getElementById('btn-login-header');
     const profileIcon = document.getElementById('profile-icon');
     const profileUsername = document.getElementById('profile-username');
+    const notifBell = document.getElementById('notification-bell');
     if (user && btn && profileIcon && profileUsername) {
         const u = JSON.parse(user);
         btn.style.display = 'none';
@@ -1163,18 +1427,140 @@ function showUserInfo() {
         profileUsername.style.width = '100px';
         profileUsername.style.textAlign = 'center';
         profileUsername.style.zIndex = '10001';
+        if (u.role === 'Lawyer' && u.portrait_path) {
+            profileIcon.innerHTML = '<img src="' + u.portrait_path + '" alt="" class="profile-icon-img">';
+        } else {
+            profileIcon.innerHTML = '<span>👤</span>';
+        }
+        if (notifBell) {
+            notifBell.style.display = 'flex';
+            notifBell.title = 'Thông báo';
+        }
     profileIcon.onclick = function(e) {
         e.stopPropagation();
         profilePopup.style.display = (profilePopup.style.display === 'block') ? 'none' : 'block';
-            if (u.role === 'Admin') btnManageUsers.style.display = '';
-            else btnManageUsers.style.display = 'none';
+            if (u.role === 'Admin') {
+                if (btnManageUsers) btnManageUsers.style.display = '';
+                const btnManageLawyers = document.getElementById('btn-manage-lawyers');
+                if (btnManageLawyers) btnManageLawyers.style.display = '';
+            } else {
+                if (btnManageUsers) btnManageUsers.style.display = 'none';
+                const btnManageLawyers = document.getElementById('btn-manage-lawyers');
+                if (btnManageLawyers) btnManageLawyers.style.display = 'none';
+            }
         };
     } else if (btn && profileIcon && profileUsername) {
         btn.style.display = '';
         profileIcon.style.display = 'none';
         profileUsername.style.display = 'none';
+        profileIcon.innerHTML = '<span>👤</span>';
+        const notifBell = document.getElementById('notification-bell');
+        if (notifBell) notifBell.style.display = 'none';
+    }
+    if (user && document.getElementById('notification-bell')) fetchNotificationUnreadCount();
+}
+
+// ====== Thông báo (chuông) ======
+async function fetchNotificationUnreadCount() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const res = await fetch('http://localhost:4000/api/notifications/unread-count', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const badge = document.getElementById('notification-badge');
+        if (badge && data.count != null) {
+            badge.textContent = data.count > 99 ? '99+' : data.count;
+            badge.style.display = data.count > 0 ? 'flex' : 'none';
+        }
+    } catch (e) {}
+}
+
+async function loadNotifications(limit = 10, viewAll = false) {
+    const token = localStorage.getItem('token');
+    const listEl = document.getElementById('notification-list');
+    if (!token || !listEl) return;
+    try {
+        const res = await fetch(`http://localhost:4000/api/notifications?limit=${limit}&offset=0`, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const notifs = data.notifications || [];
+        listEl.classList.toggle('view-all', viewAll);
+        listEl.innerHTML = notifs.length ? notifs.map(n => {
+            const time = n.created_at ? new Date(n.created_at).toLocaleString() : '';
+            return '<div class="notification-item ' + (n.read ? '' : 'unread') + '" data-id="' + n.notification_id + '" data-ref-type="' + (n.ref_type || '') + '" data-ref-id="' + (n.ref_id != null ? n.ref_id : '') + '" data-topic-id="' + (n.topic_id != null ? n.topic_id : '') + '">' + escapeHtml(n.message) + '<div class="notification-time">' + time + '</div></div>';
+        }).join('') : '<div class="notification-item">Chưa có thông báo.</div>';
+        listEl.querySelectorAll('.notification-item').forEach(function(item) {
+            var id = item.getAttribute('data-id');
+            if (!id) return;
+            item.onclick = async function() {
+                var refType = this.getAttribute('data-ref-type');
+                var refId = this.getAttribute('data-ref-id');
+                var topicId = this.getAttribute('data-topic-id');
+                var token = localStorage.getItem('token');
+                if (token) {
+                    fetch('http://localhost:4000/api/notifications/' + id + '/read', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+                }
+                this.classList.remove('unread');
+                var dropdown = document.getElementById('notification-dropdown');
+                if (dropdown) dropdown.style.display = 'none';
+                if (!topicId) return;
+                var isCommunity = window.location.pathname.indexOf('community') !== -1;
+                if (!isCommunity) {
+                    window.location.href = 'community.html?topicId=' + topicId + (refType === 'comment' && refId ? '&commentId=' + refId : '');
+                    return;
+                }
+                var detailDiv = document.getElementById('topic-detail-inline-' + topicId);
+                if (detailDiv) {
+                    document.querySelectorAll('.topic-detail-inline').forEach(function(d) { d.style.display = 'none'; });
+                    detailDiv.style.display = 'block';
+                    await showTopicDetailInline(topicId, detailDiv);
+                    var topicBlock = detailDiv.closest('li') || detailDiv.closest('.community-topic-card') || detailDiv;
+                    if (topicBlock) topicBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (refType === 'comment' && refId) {
+                        var commentEl = document.getElementById('comment-' + refId);
+                        if (commentEl) commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            };
+        });
+        fetchNotificationUnreadCount();
+    } catch (e) {
+        listEl.innerHTML = '<div class="notification-item">Lỗi tải thông báo.</div>';
     }
 }
+
+function setupNotificationBell() {
+    const bell = document.getElementById('notification-bell');
+    const dropdown = document.getElementById('notification-dropdown');
+    const viewAllBtn = document.getElementById('notification-view-all');
+    const markAllBtn = document.getElementById('notification-mark-all-read');
+    if (!bell || !dropdown) return;
+    bell.onclick = function(e) {
+        e.stopPropagation();
+        const isShow = dropdown.style.display === 'block';
+        if (isShow) {
+            dropdown.style.display = 'none';
+        } else {
+            dropdown.style.display = 'block';
+            loadNotifications(10, false);
+        }
+    };
+    viewAllBtn.addEventListener('click', function() {
+        loadNotifications(100, true);
+    });
+    markAllBtn.addEventListener('click', async function() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            await fetch('http://localhost:4000/api/notifications/mark-all-read', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+            loadNotifications(document.getElementById('notification-list').classList.contains('view-all') ? 100 : 10, document.getElementById('notification-list').classList.contains('view-all'));
+        } catch (e) {}
+    });
+    document.addEventListener('click', function(e) {
+        if (dropdown && dropdown.style.display === 'block' && !dropdown.contains(e.target) && !bell.contains(e.target)) dropdown.style.display = 'none';
+    });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupNotificationBell);
+else setupNotificationBell();
 
 // Hiển thị modal đăng nhập và đăng ký
 function showLoginModal() {
@@ -1193,6 +1579,12 @@ const btnLoginHeader = document.getElementById('btn-login-header');
 if (btnLoginHeader) btnLoginHeader.onclick = showLoginModal;
 const showRegisterBtn = document.getElementById('show-register');
 if (showRegisterBtn) showRegisterBtn.onclick = function(e) { e.preventDefault(); showRegisterModal(); };
+const showRegisterLawyerBtn = document.getElementById('show-register-lawyer');
+if (showRegisterLawyerBtn) showRegisterLawyerBtn.onclick = function(e) { e.preventDefault(); document.getElementById('register-modal').style.display = 'none'; document.getElementById('register-lawyer-modal').style.display = 'block'; };
+const closeRegisterLawyerBtn = document.getElementById('close-register-lawyer-modal');
+if (closeRegisterLawyerBtn) closeRegisterLawyerBtn.onclick = function() { document.getElementById('register-lawyer-modal').style.display = 'none'; };
+const showRegisterBackBtn = document.getElementById('show-register-back');
+if (showRegisterBackBtn) showRegisterBackBtn.onclick = function(e) { e.preventDefault(); document.getElementById('register-lawyer-modal').style.display = 'none'; document.getElementById('register-modal').style.display = 'block'; };
 const showLoginBtn = document.getElementById('show-login');
 if (showLoginBtn) showLoginBtn.onclick = function(e) { e.preventDefault(); showLoginModal(); };
 const closeLoginModalBtn = document.getElementById('close-login-modal');
@@ -1206,20 +1598,75 @@ if (closeRegisterModalBtn) closeRegisterModalBtn.onclick = function() {
     if (registerModal) registerModal.style.display = 'none';
 };
 
-// Sửa thông tin cá nhân
-if (btnEditProfile) btnEditProfile.onclick = function() {
+// Sửa thông tin cá nhân (User thường) hoặc mở form chỉnh sửa hồ sơ luật sư
+if (btnEditProfile) btnEditProfile.onclick = async function() {
     profilePopup.style.display = 'none';
-    // Fill form
     const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (user) {
+    if (!user) return;
+    if (user.role === 'Lawyer') {
+        const modal = document.getElementById('edit-lawyer-profile-modal');
+        if (!modal) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('http://localhost:4000/api/lawyers/me', { headers: { 'Authorization': 'Bearer ' + token } });
+            const data = await res.json();
+            if (!res.ok) { alert(data.message || 'Không tải được hồ sơ'); return; }
+            document.getElementById('edit-lawyer-username').value = data.username || '';
+            const p = data.LawyerProfile || {};
+            document.getElementById('edit-lawyer-full_name_legal').value = p.full_name_legal || '';
+            document.getElementById('edit-lawyer-id_number').value = p.id_number || '';
+            document.getElementById('edit-lawyer-id_issue_date').value = p.id_issue_date ? p.id_issue_date.slice(0, 10) : '';
+            document.getElementById('edit-lawyer-id_issue_place').value = p.id_issue_place || '';
+            document.getElementById('edit-lawyer-lawyer_card_number').value = p.lawyer_card_number || '';
+            document.getElementById('edit-lawyer-bar_association').value = p.bar_association || '';
+            document.getElementById('edit-lawyer-organization_name').value = p.organization_name || '';
+            document.getElementById('edit-lawyer-specialization').value = p.specialization || '';
+            document.getElementById('edit-lawyer-years_experience').value = p.years_experience != null ? p.years_experience : '';
+            document.getElementById('edit-lawyer-bio').value = p.bio || '';
+            document.getElementById('edit-lawyer-other_qualifications').value = p.other_qualifications || '';
+            document.getElementById('edit-lawyer-phone').value = p.phone || '';
+            document.getElementById('edit-lawyer-office_address').value = p.office_address || '';
+            modal.style.display = 'block';
+        } catch (e) {
+            alert('Lỗi tải hồ sơ');
+        }
+    } else {
         document.getElementById('edit-fullname').value = user.full_name || '';
         document.getElementById('edit-email').value = user.email || '';
         document.getElementById('edit-password').value = '';
+        editProfileModal.style.display = 'block';
     }
-    editProfileModal.style.display = 'block';
 };
 if (closeEditProfileModal) closeEditProfileModal.onclick = function() {
     editProfileModal.style.display = 'none';
+};
+const closeUserProfileDetailModal = document.getElementById('close-user-profile-detail-modal');
+if (closeUserProfileDetailModal) closeUserProfileDetailModal.onclick = function() {
+    document.getElementById('user-profile-detail-modal').style.display = 'none';
+};
+const closeEditLawyerProfileModal = document.getElementById('close-edit-lawyer-profile-modal');
+const editLawyerProfileModal = document.getElementById('edit-lawyer-profile-modal');
+if (closeEditLawyerProfileModal) closeEditLawyerProfileModal.onclick = function() {
+    if (editLawyerProfileModal) editLawyerProfileModal.style.display = 'none';
+};
+const editLawyerProfileForm = document.getElementById('edit-lawyer-profile-form');
+if (editLawyerProfileForm) editLawyerProfileForm.onsubmit = async function(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const formData = new FormData(this);
+    try {
+        const res = await fetch('http://localhost:4000/api/lawyers/me', {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.message || 'Lỗi cập nhật'); return; }
+        alert('Đã lưu thay đổi hồ sơ.');
+        if (editLawyerProfileModal) editLawyerProfileModal.style.display = 'none';
+    } catch (err) {
+        alert('Lỗi kết nối server');
+    }
 };
 if (editProfileForm) editProfileForm.onsubmit = async function(e) {
     e.preventDefault();
@@ -1579,6 +2026,164 @@ if (registerForm) {
     };
 }
 
+const registerLawyerForm = document.getElementById('register-lawyer-form');
+if (registerLawyerForm) {
+    registerLawyerForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const password = form.querySelector('[name="password"]').value;
+        const password2 = form.querySelector('[name="password2"]').value;
+        if (password !== password2) { alert('Nhập lại mật khẩu không khớp!'); return; }
+        const fd = new FormData();
+        fd.append('username', (form.querySelector('[name="username"]').value || '').trim());
+        fd.append('email', (form.querySelector('[name="email"]').value || '').trim());
+        fd.append('password', password);
+        fd.append('full_name_legal', (form.querySelector('[name="full_name_legal"]').value || '').trim());
+        fd.append('id_number', (form.querySelector('[name="id_number"]').value || '').trim());
+        fd.append('id_issue_date', (form.querySelector('[name="id_issue_date"]').value || '').trim());
+        fd.append('id_issue_place', (form.querySelector('[name="id_issue_place"]').value || '').trim());
+        fd.append('lawyer_card_number', (form.querySelector('[name="lawyer_card_number"]').value || '').trim());
+        fd.append('bar_association', (form.querySelector('[name="bar_association"]').value || '').trim());
+        fd.append('organization_name', (form.querySelector('[name="organization_name"]').value || '').trim());
+        fd.append('specialization', (form.querySelector('[name="specialization"]').value || '').trim());
+        fd.append('years_experience', (form.querySelector('[name="years_experience"]').value || '').trim());
+        fd.append('bio', (form.querySelector('[name="bio"]').value || '').trim());
+        fd.append('other_qualifications', (form.querySelector('[name="other_qualifications"]').value || '').trim());
+        fd.append('phone', (form.querySelector('[name="phone"]').value || '').trim());
+        fd.append('office_address', (form.querySelector('[name="office_address"]').value || '').trim());
+        const portrait = form.querySelector('[name="portrait"]');
+        if (portrait && portrait.files && portrait.files[0]) fd.append('portrait', portrait.files[0]);
+        const idFront = form.querySelector('[name="id_front"]');
+        if (idFront && idFront.files && idFront.files[0]) fd.append('id_front', idFront.files[0]);
+        const idBack = form.querySelector('[name="id_back"]');
+        if (idBack && idBack.files && idBack.files[0]) fd.append('id_back', idBack.files[0]);
+        const lawyerCard = form.querySelector('[name="lawyer_card_photo"]');
+        if (lawyerCard && lawyerCard.files && lawyerCard.files[0]) fd.append('lawyer_card_photo', lawyerCard.files[0]);
+        try {
+            const res = await fetch('http://localhost:4000/api/auth/register-lawyer', { method: 'POST', body: fd });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const msg = data.message || data.error || 'Đăng ký thất bại';
+                alert(msg + (data.error ? '\n\nChi tiết: ' + data.error : ''));
+                return;
+            }
+            alert(data.message || 'Gửi hồ sơ thành công. Admin sẽ duyệt và kích hoạt tài khoản.');
+            document.getElementById('register-lawyer-modal').style.display = 'none';
+            registerLawyerForm.reset();
+            showLoginModal();
+        } catch (err) {
+            alert('Lỗi kết nối server: ' + (err.message || err));
+        }
+    };
+}
+
+// ====== ADMIN: DUYỆT LUẬT SƯ ======
+const btnManageLawyers = document.getElementById('btn-manage-lawyers');
+const manageLawyersModal = document.getElementById('manage-lawyers-modal');
+const closeManageLawyersModal = document.getElementById('close-manage-lawyers-modal');
+const lawyerDetailModal = document.getElementById('lawyer-detail-modal');
+const closeLawyerDetailModal = document.getElementById('close-lawyer-detail-modal');
+
+if (closeManageLawyersModal) closeManageLawyersModal.onclick = function() { manageLawyersModal.style.display = 'none'; };
+if (closeLawyerDetailModal) closeLawyerDetailModal.onclick = function() { lawyerDetailModal.style.display = 'none'; };
+
+async function loadLawyersPending() {
+    const listEl = document.getElementById('lawyers-pending-list');
+    if (!listEl) return;
+    listEl.innerHTML = 'Đang tải...';
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('http://localhost:4000/api/lawyers/pending', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        if (!res.ok) { listEl.innerHTML = data.message || 'Lỗi tải danh sách'; return; }
+        const list = Array.isArray(data) ? data : (data.list || []);
+        if (!list.length) { listEl.innerHTML = '<p>Không có hồ sơ luật sư nào chờ duyệt.</p>'; return; }
+        let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr><th>ID</th><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Thao tác</th></tr></thead><tbody>';
+        list.forEach(u => {
+            const name = u.full_name || (u.LawyerProfile && u.LawyerProfile.full_name_legal) || u.username;
+            html += '<tr><td>' + u.user_id + '</td><td>' + (u.username || '') + '</td><td>' + (name || '') + '</td><td>' + (u.email || '') + '</td><td>';
+            html += '<button type="button" class="btn-primary btn-view-lawyer" data-id="' + u.user_id + '" style="margin-right:6px;">Xem</button>';
+            html += '<button type="button" class="btn-primary btn-approve-lawyer" data-id="' + u.user_id + '" style="margin-right:6px;background:#2e7d32;">Duyệt</button>';
+            html += '<button type="button" class="btn-primary btn-reject-lawyer" data-id="' + u.user_id + '" style="background:#c62828;">Từ chối</button>';
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        listEl.innerHTML = html;
+        listEl.querySelectorAll('.btn-view-lawyer').forEach(btn => btn.onclick = () => showLawyerDetail(btn.getAttribute('data-id')));
+        listEl.querySelectorAll('.btn-approve-lawyer').forEach(btn => btn.onclick = () => approveLawyer(btn.getAttribute('data-id')));
+        listEl.querySelectorAll('.btn-reject-lawyer').forEach(btn => btn.onclick = () => rejectLawyer(btn.getAttribute('data-id')));
+    } catch (err) {
+        listEl.innerHTML = 'Lỗi kết nối server';
+    }
+}
+
+function imgCell(url, label) {
+    if (!url) return '<span>-</span>';
+    return '<div><strong>' + (label || '') + '</strong><br><a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="" style="max-width:120px;max-height:90px;object-fit:contain;border:1px solid #ddd;border-radius:6px;"></a></div>';
+}
+
+async function showLawyerDetail(userId) {
+    const body = document.getElementById('lawyer-detail-body');
+    const actions = document.getElementById('lawyer-detail-actions');
+    if (!body) return;
+    body.innerHTML = 'Đang tải...';
+    lawyerDetailModal.style.display = 'block';
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('http://localhost:4000/api/lawyers/' + userId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const u = await res.json();
+        if (!res.ok) { body.innerHTML = u.message || 'Không tải được'; return; }
+        const p = u.LawyerProfile || {};
+        let html = '<div class="form-section">Tài khoản</div><p><b>Username:</b> ' + (u.username || '') + '</p><p><b>Email:</b> ' + (u.email || '') + '</p><p><b>Họ tên:</b> ' + (u.full_name || p.full_name_legal || '') + '</p>';
+        html += '<div class="form-section">1. Định danh</div><p><b>Họ tên khai sinh:</b> ' + (p.full_name_legal || '') + '</p>';
+        html += '<p><b>CCCD/Hộ chiếu:</b> ' + (p.id_number || '') + ' | Ngày cấp: ' + (p.id_issue_date || '') + ' | Nơi cấp: ' + (p.id_issue_place || '') + '</p>';
+        html += imgCell(p.portrait_path, 'Ảnh chân dung') + '<br>';
+        html += imgCell(p.id_front_path, 'CCCD mặt trước') + ' ' + imgCell(p.id_back_path, 'CCCD mặt sau') + '<br>';
+        html += '<div class="form-section">2. Hành nghề</div><p><b>Số Thẻ LS:</b> ' + (p.lawyer_card_number || '') + '</p><p><b>Đoàn Luật sư:</b> ' + (p.bar_association || '') + '</p><p><b>Tổ chức:</b> ' + (p.organization_name || '') + '</p>';
+        html += imgCell(p.lawyer_card_photo_path, 'Ảnh Thẻ Luật sư') + '<br>';
+        html += '<div class="form-section">3. Chuyên môn</div><p><b>Lĩnh vực:</b> ' + (p.specialization || '') + '</p><p><b>Số năm KN:</b> ' + (p.years_experience != null ? p.years_experience : '') + '</p><p><b>Giới thiệu:</b> ' + (p.bio || '') + '</p><p><b>Bằng cấp khác:</b> ' + (p.other_qualifications || '') + '</p>';
+        html += '<div class="form-section">4. Liên lạc</div><p><b>Điện thoại:</b> ' + (p.phone || '') + '</p><p><b>Địa chỉ VP:</b> ' + (p.office_address || '') + '</p>';
+        body.innerHTML = html;
+        actions.innerHTML = '<button type="button" class="btn-primary btn-approve-lawyer-inline" data-id="' + userId + '" style="background:#2e7d32;">Duyệt</button> <button type="button" class="btn-primary btn-reject-lawyer-inline" data-id="' + userId + '" style="background:#c62828;">Từ chối</button>';
+        actions.querySelector('.btn-approve-lawyer-inline').onclick = () => approveLawyer(userId);
+        actions.querySelector('.btn-reject-lawyer-inline').onclick = () => rejectLawyer(userId);
+    } catch (err) {
+        body.innerHTML = 'Lỗi kết nối server';
+    }
+}
+
+async function approveLawyer(userId) {
+    if (!confirm('Xác nhận duyệt và kích hoạt tài khoản luật sư này?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('http://localhost:4000/api/lawyers/' + userId + '/approve', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        if (!res.ok) return alert(data.message || 'Lỗi');
+        alert('Đã duyệt.');
+        lawyerDetailModal.style.display = 'none';
+        loadLawyersPending();
+    } catch (err) { alert('Lỗi kết nối'); }
+}
+
+async function rejectLawyer(userId) {
+    if (!confirm('Xác nhận từ chối hồ sơ luật sư này?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('http://localhost:4000/api/lawyers/' + userId + '/reject', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        if (!res.ok) return alert(data.message || 'Lỗi');
+        alert('Đã từ chối.');
+        lawyerDetailModal.style.display = 'none';
+        loadLawyersPending();
+    } catch (err) { alert('Lỗi kết nối'); }
+}
+
+if (btnManageLawyers) btnManageLawyers.onclick = function() {
+    profilePopup.style.display = 'none';
+    manageLawyersModal.style.display = 'block';
+    loadLawyersPending();
+};
+
 const createTopicForm = document.getElementById('create-topic-form');
 if (createTopicForm) {
     createTopicForm.onsubmit = async function(e) {
@@ -1590,20 +2195,31 @@ if (createTopicForm) {
             alert('Bạn cần đăng nhập để tạo chủ đề!');
             return;
         }
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        const imagesInput = document.getElementById('topic-images');
+        const videoInput = document.getElementById('topic-video');
+        if (imagesInput && imagesInput.files && imagesInput.files.length) {
+            for (let i = 0; i < Math.min(5, imagesInput.files.length); i++) {
+                formData.append('images', imagesInput.files[i]);
+            }
+        }
+        if (videoInput && videoInput.files && videoInput.files[0]) {
+            formData.append('video', videoInput.files[0]);
+        }
         try {
             const res = await fetch('http://localhost:4000/api/topics', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ title, content })
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
             });
             const data = await res.json();
             if (!res.ok) return alert(data.message || 'Tạo chủ đề thất bại');
             alert('Tạo chủ đề thành công!');
             document.getElementById('create-topic-modal').style.display = 'none';
-            loadCommunityTopics(); // reload lại danh sách chủ đề
+            createTopicForm.reset();
+            loadCommunityTopics();
         } catch (err) {
             alert('Lỗi kết nối server');
         }

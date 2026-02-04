@@ -15,4 +15,19 @@ module.exports = (req, res, next) => {
     } catch (err) {
         return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn' });
     }
-}; 
+};
+
+/** Nếu có token hợp lệ thì gán req.user, không thì vẫn next() */
+function optionalAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return next();
+    const token = authHeader.split(' ')[1];
+    if (!token) return next();
+    try {
+        req.user = jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (err) {
+        next();
+    }
+}
+module.exports.optionalAuth = optionalAuth; 

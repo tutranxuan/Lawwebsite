@@ -17,6 +17,12 @@
             </div>
         </div>
         <button id="btn-login-header" class="btn-login-header">Đăng nhập</button>
+        <div id="notification-bell" class="notification-bell" title="Thông báo" style="display:none;"><span class="bell-icon">🔔</span><span id="notification-badge" class="notification-badge" style="display:none;">0</span></div>
+        <div id="notification-dropdown" class="notification-dropdown" style="display:none;">
+            <div class="notification-dropdown-header"><span>Thông báo</span><button type="button" id="notification-mark-all-read">Đánh dấu đã đọc</button></div>
+            <div id="notification-list" class="notification-list"></div>
+            <div class="notification-dropdown-footer"><button type="button" id="notification-view-all">Xem tất cả</button></div>
+        </div>
     </header>
     <nav class="main-nav">
         <ul class="main-menu">
@@ -46,15 +52,32 @@
             </div>
             <button id="btn-create-topic">Tạo chủ đề mới</button>
             <ul id="topic-list"></ul>
+            <div id="topic-pagination" class="topic-pagination"></div>
+        </div>
+        <!-- Lightbox phóng to ảnh / video -->
+        <div id="media-lightbox" class="media-lightbox" style="display:none;">
+            <span class="media-lightbox-close" id="media-lightbox-close">&times;</span>
+            <div class="media-lightbox-content">
+                <img id="media-lightbox-img" class="media-lightbox-img" alt="">
+                <video id="media-lightbox-video" class="media-lightbox-video" controls style="display:none;"></video>
+            </div>
         </div>
         <!-- Modal tạo chủ đề mới -->
         <div id="create-topic-modal" class="modal" style="display:none">
             <div class="modal-content">
                 <span class="close" id="close-create-topic">&times;</span>
                 <h3>Tạo chủ đề mới</h3>
-                <form id="create-topic-form">
+                <form id="create-topic-form" enctype="multipart/form-data">
                     <input type="text" id="topic-title" placeholder="Tiêu đề" required><br>
                     <textarea id="topic-content" placeholder="Nội dung" required></textarea><br>
+                    <div class="form-group">
+                        <label>Ảnh đính kèm (1 file, mỗi ảnh &lt; 5MB)</label>
+                        <input type="file" id="topic-images" name="images" accept="image/*" multiple>
+                    </div>
+                    <div class="form-group">
+                        <label>Video đính kèm (1 file, &lt; 50MB)</label>
+                        <input type="file" id="topic-video" name="video" accept="video/*">
+                    </div>
                     <button type="submit">Tạo chủ đề</button>
                 </form>
             </div>
@@ -107,6 +130,44 @@
                 </div>
                 <button type="submit" class="btn-primary">Đăng ký</button>
                 <div class="form-link">Đã có tài khoản? <a href="#" id="show-login">Đăng nhập</a></div>
+                <div class="form-link" style="margin-top:10px;">Đăng ký tài khoản với tư cách <a href="#" id="show-register-lawyer">luật sư</a></div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Đăng ký luật sư (nội dung giống index, dùng chung script) -->
+    <div id="register-lawyer-modal" class="modal" style="display:none;">
+        <div class="modal-content modal-content-lawyer" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+            <span class="close" id="close-register-lawyer-modal">&times;</span>
+            <h2>Đăng ký hồ sơ luật sư</h2>
+            <p class="form-hint">Sau khi gửi, Admin sẽ xem và duyệt. Tài khoản sẽ được kích hoạt khi được duyệt.</p>
+            <form id="register-lawyer-form" enctype="multipart/form-data">
+                <div class="form-section">Tài khoản</div>
+                <div class="form-group"><label>Tên đăng nhập <span class="required">*</span></label><input type="text" name="username" required></div>
+                <div class="form-group"><label>Email <span class="required">*</span></label><input type="email" name="email" required></div>
+                <div class="form-group"><label>Mật khẩu <span class="required">*</span></label><input type="password" name="password" required></div>
+                <div class="form-group"><label>Nhập lại mật khẩu <span class="required">*</span></label><input type="password" name="password2" required></div>
+                <div class="form-section">1. Thông tin định danh</div>
+                <div class="form-group"><label>Họ và tên khai sinh <span class="required">*</span></label><input type="text" name="full_name_legal" required></div>
+                <div class="form-group"><label>Ảnh chân dung</label><input type="file" name="portrait" accept="image/*"></div>
+                <div class="form-group"><label>Số CCCD/Hộ chiếu</label><input type="text" name="id_number"></div>
+                <div class="form-group"><label>Ngày cấp</label><input type="date" name="id_issue_date"></div>
+                <div class="form-group"><label>Nơi cấp</label><input type="text" name="id_issue_place"></div>
+                <div class="form-group"><label>Ảnh 2 mặt CCCD</label><input type="file" name="id_front" accept="image/*"><input type="file" name="id_back" accept="image/*" style="margin-top:6px;"></div>
+                <div class="form-section">2. Hành nghề</div>
+                <div class="form-group"><label>Số Thẻ Luật sư</label><input type="text" name="lawyer_card_number"></div>
+                <div class="form-group"><label>Đoàn Luật sư</label><input type="text" name="bar_association" placeholder="VD: Đoàn Luật sư TP. Hà Nội"></div>
+                <div class="form-group"><label>Ảnh Thẻ Luật sư</label><input type="file" name="lawyer_card_photo" accept="image/*"></div>
+                <div class="form-group"><label>Tên tổ chức hành nghề</label><input type="text" name="organization_name"></div>
+                <div class="form-section">3. Chuyên môn</div>
+                <div class="form-group"><label>Lĩnh vực chuyên sâu</label><input type="text" name="specialization"></div>
+                <div class="form-group"><label>Số năm kinh nghiệm</label><input type="number" name="years_experience" min="0"></div>
+                <div class="form-group"><label>Giới thiệu bản thân</label><textarea name="bio" rows="3"></textarea></div>
+                <div class="form-group"><label>Bằng cấp/Chứng chỉ khác</label><textarea name="other_qualifications" rows="2"></textarea></div>
+                <div class="form-section">4. Liên lạc</div>
+                <div class="form-group"><label>Số điện thoại</label><input type="tel" name="phone"></div>
+                <div class="form-group"><label>Địa chỉ văn phòng</label><input type="text" name="office_address"></div>
+                <button type="submit" class="btn-primary">Gửi hồ sơ đăng ký luật sư</button>
+                <div class="form-link" style="margin-top:10px;"><a href="#" id="show-register-back">Quay lại đăng ký thường</a></div>
             </form>
         </div>
     </div>
@@ -162,7 +223,64 @@
         <button id="btn-edit-profile">Sửa thông tin cá nhân</button>
         <button id="btn-logout">Đăng xuất</button>
         <button id="btn-manage-users" style="display:none;">Quản lý người dùng</button>
+        <button id="btn-manage-lawyers" style="display:none;">Duyệt luật sư</button>
+    </div>
+    <!-- Modal duyệt luật sư (admin) -->
+    <div id="manage-lawyers-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:720px;">
+            <span class="close" id="close-manage-lawyers-modal">&times;</span>
+            <h2>Hồ sơ luật sư chờ duyệt</h2>
+            <div id="lawyers-pending-list"></div>
+        </div>
+    </div>
+    <!-- Modal chi tiết hồ sơ luật sư (admin) -->
+    <div id="lawyer-detail-modal" class="modal" style="display:none;">
+        <div class="modal-content modal-content-lawyer" style="max-width:640px;max-height:90vh;overflow-y:auto;">
+            <span class="close" id="close-lawyer-detail-modal">&times;</span>
+            <h2>Chi tiết hồ sơ luật sư</h2>
+            <div id="lawyer-detail-body"></div>
+            <div id="lawyer-detail-actions" style="margin-top:16px;"></div>
+        </div>
+    </div>
+    <!-- Modal xem thông tin user/luật sư (click vào nick) -->
+    <div id="user-profile-detail-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:480px;">
+            <span class="close" id="close-user-profile-detail-modal">&times;</span>
+            <h2>Thông tin</h2>
+            <div id="user-profile-detail-body"></div>
+        </div>
+    </div>
+    <!-- Modal chỉnh sửa hồ sơ luật sư (luật sư tự sửa) -->
+    <div id="edit-lawyer-profile-modal" class="modal" style="display:none;">
+        <div class="modal-content modal-content-lawyer" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+            <span class="close" id="close-edit-lawyer-profile-modal">&times;</span>
+            <h2>Chỉnh sửa hồ sơ luật sư</h2>
+            <form id="edit-lawyer-profile-form" enctype="multipart/form-data">
+                <div class="form-section">Tài khoản (chỉ hiển thị)</div>
+                <div class="form-group"><label>Tên đăng nhập</label><input type="text" id="edit-lawyer-username" readonly disabled></div>
+                <div class="form-section">1. Thông tin định danh</div>
+                <div class="form-group"><label>Họ và tên khai sinh <span class="required">*</span></label><input type="text" name="full_name_legal" id="edit-lawyer-full_name_legal" required></div>
+                <div class="form-group"><label>Ảnh chân dung</label><input type="file" name="portrait" accept="image/*"></div>
+                <div class="form-group"><label>Số CCCD/Hộ chiếu</label><input type="text" name="id_number" id="edit-lawyer-id_number"></div>
+                <div class="form-group"><label>Ngày cấp</label><input type="date" name="id_issue_date" id="edit-lawyer-id_issue_date"></div>
+                <div class="form-group"><label>Nơi cấp</label><input type="text" name="id_issue_place" id="edit-lawyer-id_issue_place"></div>
+                <div class="form-section">2. Hành nghề</div>
+                <div class="form-group"><label>Số Thẻ Luật sư</label><input type="text" name="lawyer_card_number" id="edit-lawyer-lawyer_card_number"></div>
+                <div class="form-group"><label>Đoàn Luật sư</label><input type="text" name="bar_association" id="edit-lawyer-bar_association" placeholder="VD: Đoàn Luật sư TP. Hà Nội"></div>
+                <div class="form-group"><label>Tên tổ chức hành nghề</label><input type="text" name="organization_name" id="edit-lawyer-organization_name"></div>
+                <div class="form-section">3. Chuyên môn</div>
+                <div class="form-group"><label>Lĩnh vực chuyên sâu</label><input type="text" name="specialization" id="edit-lawyer-specialization"></div>
+                <div class="form-group"><label>Số năm kinh nghiệm</label><input type="number" name="years_experience" id="edit-lawyer-years_experience" min="0"></div>
+                <div class="form-group"><label>Giới thiệu bản thân</label><textarea name="bio" id="edit-lawyer-bio" rows="3"></textarea></div>
+                <div class="form-group"><label>Bằng cấp/Chứng chỉ khác</label><textarea name="other_qualifications" id="edit-lawyer-other_qualifications" rows="2"></textarea></div>
+                <div class="form-section">4. Liên lạc</div>
+                <div class="form-group"><label>Số điện thoại</label><input type="tel" name="phone" id="edit-lawyer-phone"></div>
+                <div class="form-group"><label>Địa chỉ văn phòng</label><input type="text" name="office_address" id="edit-lawyer-office_address"></div>
+                <button type="submit" class="btn-primary">Lưu thay đổi</button>
+            </form>
+        </div>
     </div>
     <script src="script.js"></script>
+    <script src="chatbot.js"></script>
 </body>
 </html> 

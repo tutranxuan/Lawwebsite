@@ -32,6 +32,19 @@ const DiscussionTopic = sequelize.define('DiscussionTopic', {
         type: DataTypes.STRING(50),
         allowNull: false,
         defaultValue: 'Open'
+    },
+    image_paths: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    video_path: {
+        type: DataTypes.STRING(500),
+        allowNull: true
+    },
+    likes_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     tableName: 'discussiontopics',

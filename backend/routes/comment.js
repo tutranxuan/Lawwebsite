@@ -3,6 +3,7 @@ const router = express.Router();
 const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 
+router.post('/like/:commentId', authMiddleware, commentController.toggleCommentLike);
 router.post('/:topicId', authMiddleware, commentController.addComment);
 router.delete('/:commentId', authMiddleware, commentController.deleteComment);
 

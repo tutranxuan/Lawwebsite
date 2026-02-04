@@ -12,6 +12,9 @@ const authRoutes = require('./routes/auth');
 const discussionRoutes = require('./routes/discussion');
 const commentRoutes = require('./routes/comment');
 const userRoutes = require('./routes/user');
+const chatbotRoutes = require('./routes/chatbot');
+const lawyerRoutes = require('./routes/lawyers');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -43,6 +46,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/topics', discussionRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/lawyers', lawyerRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

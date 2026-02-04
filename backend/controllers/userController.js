@@ -19,7 +19,7 @@ exports.updateUserStatus = async (req, res) => {
         if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Chỉ admin mới được cập nhật status user' });
         const { id } = req.params;
         const { status } = req.body;
-        if (!['Active', 'Inactive', 'Banned'].includes(status)) return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
+        if (!['Active', 'Inactive', 'Banned', 'Rejected'].includes(status)) return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
         const user = await User.findByPk(id);
         if (!user) return res.status(404).json({ message: 'Không tìm thấy user' });
         user.status = status;
