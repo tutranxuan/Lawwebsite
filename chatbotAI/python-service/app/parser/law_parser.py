@@ -156,8 +156,37 @@ def _parse_dieu_list(parent_id: str, doc_id: str, text: str) -> list[LawNode]:
     return dieu_nodes
 
 
+def _parse_muc_or_dieu(parent_id: str, doc_id: str, text: str) -> list[LawNode]:
+    """Trong một Chương: nếu có 'Mục N' thì lồng Điều dưới Mục, ngược lại trả
+    thẳng danh sách Điều."""
+    muc_match = PATTERNS["muc"].search(text)
+    if not muc_match:
+        return _parse_dieu_list(parent_id, doc_id, text)
+
+    nodes: list[LawNode] = []
+    # Điều nằm trước "Mục 1" (nếu có) gắn trực tiếp vào Chương.
+    preamble = text[: muc_match.start()]
+    if preamble.strip():
+        nodes.extend(_parse_dieu_list(parent_id, doc_id, preamble))
+
+    for m_num, m_title, m_body in _split_by_pattern(text, PATTERNS["muc"]):
+        muc_id = make_id("muc", parent_id, m_num)
+        dieu_nodes = _parse_dieu_list(muc_id, doc_id, m_body or m_title)
+        nodes.append(
+            LawNode(
+                id=muc_id,
+                level="muc",
+                number=m_num,
+                title=m_title[:300],
+                content=m_title,
+                children=dieu_nodes,
+            )
+        )
+    return nodes
+
+
 def parse_law_text(text: str, doc_id: str, doc_title: str) -> LawNode:
-    """Chuyển plain text thành cây: VanBan → Chuong → Dieu → Khoan → Diem."""
+    """Chuyển plain text thành cây: VanBan → Chuong → Mục → Dieu → Khoan → Diem."""
     text = _trim_garbage_prefix(text)
     root = LawNode(
         id=doc_id,
@@ -171,7 +200,7 @@ def parse_law_text(text: str, doc_id: str, doc_title: str) -> LawNode:
     if chuong_segments:
         for ch_num, ch_title, ch_body in chuong_segments:
             ch_id = make_id("chuong", doc_id, ch_num)
-            dieu_nodes = _parse_dieu_list(ch_id, doc_id, ch_body or ch_title)
+            child_nodes = _parse_muc_or_dieu(ch_id, doc_id, ch_body or ch_title)
             root.children.append(
                 LawNode(
                     id=ch_id,
@@ -179,17 +208,18 @@ def parse_law_text(text: str, doc_id: str, doc_title: str) -> LawNode:
                     number=ch_num,
                     title=ch_title[:300],
                     content=ch_title,
-                    children=dieu_nodes,
+                    children=child_nodes,
                 )
             )
         if root.children:
             return root
 
-    dieu_nodes = _parse_dieu_list(doc_id, doc_id, text)
-    if not dieu_nodes:
+    # Không có Chương: vẫn hỗ trợ 'Mục' ở cấp cao nhất nếu có.
+    nodes = _parse_muc_or_dieu(doc_id, doc_id, text)
+    if not nodes:
         root.content = text[:2000]
         return root
-    root.children.extend(dieu_nodes)
+    root.children.extend(nodes)
     return root
 
 
