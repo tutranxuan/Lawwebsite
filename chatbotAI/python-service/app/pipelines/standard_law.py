@@ -21,6 +21,7 @@ def normalize_so_hieu(value: str) -> str:
 LEVEL_LABEL = {
     "van_ban": S.VAN_BAN,
     "chuong": S.CHUONG,
+    "muc": S.MUC,
     "dieu": S.DIEU,
     "khoan": S.KHOAN,
     "diem": S.DIEM,
@@ -28,8 +29,11 @@ LEVEL_LABEL = {
 
 REL_MAP = {
     ("van_ban", "chuong"): S.CO_CHUONG,
+    ("van_ban", "muc"): S.CO_MUC,
     ("van_ban", "dieu"): S.CO_DIEU,
+    ("chuong", "muc"): S.CO_MUC,
     ("chuong", "dieu"): S.CO_DIEU,
+    ("muc", "dieu"): S.CO_DIEU,
     ("dieu", "khoan"): S.CO_KHOAN,
     ("khoan", "diem"): S.CO_DIEM,
     ("dieu", "diem"): S.CO_DIEM,
@@ -90,6 +94,7 @@ def _format_reference_path(raw: str) -> str:
         mapping = {
             "van_ban": "Văn bản",
             "chuong": "Chương",
+            "muc": "Mục",
             "dieu": "Điều",
             "khoan": "Khoản",
             "diem": "Điểm",

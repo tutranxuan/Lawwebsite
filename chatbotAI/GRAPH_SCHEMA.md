@@ -3,11 +3,12 @@
 ## Pipeline 1: STANDARD_LAW (Regex)
 
 ```
-VanBan ──CO_CHUONG──► Chuong ──CO_DIEU──► Dieu ──CO_KHOAN──► Khoan ──CO_DIEM──► Diem
+VanBan ──CO_CHUONG──► Chuong ──CO_MUC──► Muc ──CO_DIEU──► Dieu ──CO_KHOAN──► Khoan ──CO_DIEM──► Diem
 ```
 
 - Luật, Nghị định, Thông tư thông thường
-- Regex: `Điều \d+`, `1.`, `a)`
+- `Muc` (Mục) là cấp tuỳ chọn giữa Chương và Điều; nếu Chương không chia Mục thì Điều gắn trực tiếp vào Chương (`CO_DIEU`).
+- Regex: `Chương`, `Mục \d+`, `Điều \d+`, `1.`, `a)`
 
 ## Pipeline 2: TECHNICAL_REGULATION (QCVN / Phụ lục)
 

@@ -104,7 +104,9 @@ class Neo4jClient:
                        OR ($from_doc_id <> '' AND (from.doc_id = $from_doc_id OR from.id = $from_doc_id))
                     MATCH (to:{S.VAN_BAN})
                     WHERE ($to_doc <> '' AND to.document_number = $to_doc)
-                       OR ($to_title <> '' AND to.title CONTAINS $to_title)
+                       OR ($to_title <> '' AND
+                           replace(toLower(to.title), ',', '')
+                           CONTAINS replace(toLower($to_title), ',', ''))
                     WITH from, to WHERE from <> to
                     MERGE (from)-[r:{rel}]->(to)
                     SET r.note = $note, r.target_dieu = $to_dieu

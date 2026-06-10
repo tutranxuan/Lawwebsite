@@ -1,8 +1,9 @@
 """Ontology GraphRAG – nhãn tiếng Việt thống nhất."""
 
-# --- Văn bản luật chuẩn: VanBan → Chuong → Dieu → Khoan → Diem ---
+# --- Văn bản luật chuẩn: VanBan → Chuong → Muc → Dieu → Khoan → Diem ---
 VAN_BAN = "VanBan"
 CHUONG = "Chuong"
+MUC = "Muc"
 DIEU = "Dieu"
 KHOAN = "Khoan"
 DIEM = "Diem"
@@ -17,13 +18,14 @@ VI_PHAM = "ViPham"
 PHUONG_TIEN = "PhuongTien"
 HINH_PHAT = "HinhPhat"
 
-STANDARD_LABELS = {VAN_BAN, CHUONG, DIEU, KHOAN, DIEM}
+STANDARD_LABELS = {VAN_BAN, CHUONG, MUC, DIEU, KHOAN, DIEM}
 TECHNICAL_LABELS = {VAN_BAN, PHAN, TIEU_MUC, YEU_CAU}
 PENALTY_LABELS = {VI_PHAM, PHUONG_TIEN, HINH_PHAT}
 ALL_LABELS = STANDARD_LABELS | TECHNICAL_LABELS | PENALTY_LABELS
 
 # --- Quan hệ cấu trúc ---
 CO_CHUONG = "CO_CHUONG"
+CO_MUC = "CO_MUC"
 CO_DIEU = "CO_DIEU"
 CO_KHOAN = "CO_KHOAN"
 CO_DIEM = "CO_DIEM"
@@ -43,7 +45,7 @@ AP_DUNG_CHO = "AP_DUNG_CHO"     # ViPham → PhuongTien
 CO_HINH_PHAT = "CO_HINH_PHAT"   # ViPham → HinhPhat
 
 STRUCTURAL_RELS = {
-    CO_CHUONG, CO_DIEU, CO_KHOAN, CO_DIEM,
+    CO_CHUONG, CO_MUC, CO_DIEU, CO_KHOAN, CO_DIEM,
     CO_PHAN, CO_TIEU_MUC, CO_YEU_CAU,
 }
 CROSS_RELS = {THAM_CHIEU, HUONG_DAN, CAN_CU, THAY_THE}
