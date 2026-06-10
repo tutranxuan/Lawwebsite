@@ -1,0 +1,44 @@
+{
+  "groups": [
+    {
+      "parent_title": "Luật Trật tự, an toàn giao thông đường bộ 2024",
+      "relation": "HUONG_DAN",
+      "children": [
+        "168/2024/NĐ-CP", "165/2024/NĐ-CP", "166/2024/NĐ-CP", "160/2024/NĐ-CP",
+        "161/2024/NĐ-CP", "156/2024/NĐ-CP", "151/2024/NĐ-CP", "36/2024/TT-BYT",
+        "83/2024/TT-BCA", "73/2024/TT-BCA", "52/2024/TT-BGTVT", "51/2024/TT-BGTVT",
+        "39/2024/TT-BGTVT", "79/2024/TT-BCA", "82/2024/TT-BCA", "81/2024/TT-BCA",
+        "35/2024/TT-BGTVT", "54/2024/TT-BGTVT", "55/2024/TT-BGTVT", "46/2024/TT-BGTVT",
+        "47/2024/TT-BGTVT", "45/2024/TT-BGTVT", "50/2024/TT-BGTVT", "49/2024/TT-BGTVT",
+        "53/2024/TT-BGTVT", "38/2024/TT-BGTVT", "72/2024/TT-BCA", "62/2024/TT-BCA",
+        "69/2024/TT-BCA", "65/2024/TT-BCA", "71/2024/TT-BCA", "67/2024/TT-BQP",
+        "68/2024/TT-BQP", "66/2024/TT-BQP", "69/2024/TT-BQP", "70/2024/TT-BQP",
+        "71/2024/TT-BQP"
+      ]
+    },
+    {
+      "parent_title": "Luật Đường bộ 2024",
+      "relation": "HUONG_DAN",
+      "children": [
+        "165/2024/NĐ-CP", "158/2024/NĐ-CP", "56/2024/TT-BGTVT", "40/2024/TT-BGTVT",
+        "41/2024/TT-BGTVT", "36/2024/TT-BGTVT", "58/2024/TT-BGTVT", "34/2024/TT-BGTVT",
+        "130/2024/NĐ-CP", "119/2024/NĐ-CP"
+      ]
+    }
+  ],
+  "special_links": [
+    {
+      "from": "165/2024/NĐ-CP",
+      "to_title": "Luật Đường bộ 2024",
+      "relation": "CAN_CU",
+      "note": "Căn cứ Luật Đường bộ 2024"
+    },
+    {
+      "from": "165/2024/NĐ-CP",
+      "to_title": "Luật Trật tự, an toàn giao thông",
+      "to_dieu": "77",
+      "relation": "THAM_CHIEU",
+      "note": "Hướng dẫn Điều 77"
+    }
+  ]
+}

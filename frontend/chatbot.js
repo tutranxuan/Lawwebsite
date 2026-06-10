@@ -111,7 +111,19 @@ class LawChatbot {
             
             const data = await response.json();
             this.hideTyping();
-            this.addMessage(data.answer, 'bot');
+            let answer = data.answer || 'Xin lỗi, không nhận được phản hồi.';
+            if (data.sources && data.sources.length > 0) {
+                const refs = data.sources
+                    .slice(0, 3)
+                    .map(s => {
+                        const label = [s.level, s.number].filter(Boolean).join(' ');
+                        return label ? `• ${label}: ${(s.title || '').slice(0, 80)}` : null;
+                    })
+                    .filter(Boolean)
+                    .join('\n');
+                if (refs) answer += '\n\n📚 Tham chiếu:\n' + refs;
+            }
+            this.addMessage(answer, 'bot');
         } catch (error) {
             this.hideTyping();
             // Fallback to local processing if API fails

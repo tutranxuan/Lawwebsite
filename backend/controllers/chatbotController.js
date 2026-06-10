@@ -3,7 +3,9 @@ const fetch = require('node-fetch');
 const LegalDocument = require('../models/LegalDocument');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = 'gemini-1.5-flash'; // có thể đổi sang gemini-1.5-pro nếu cần
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const USE_GRAPH_RAG = process.env.USE_GRAPH_RAG === 'true';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
 /**
  * Trích 3-5 văn bản VBPL liên quan để làm context cho prompt.
@@ -91,7 +93,25 @@ Tránh bịa đặt; nếu không chắc, hãy nói chưa có đủ thông tin.
     return answer || 'Xin lỗi, tôi chưa có câu trả lời phù hợp.';
 }
 
-// Xử lý câu hỏi từ chatbot (Gemini + RAG đơn giản từ DB)
+/**
+ * Gọi Python AI Service (Graph RAG: Neo4j + FAISS + Gemini).
+ */
+async function callGraphRAG(question) {
+    const resp = await fetch(`${AI_SERVICE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+    });
+
+    if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`AI Service error ${resp.status}: ${text}`);
+    }
+
+    return resp.json();
+}
+
+// Xử lý câu hỏi từ chatbot (Graph RAG hoặc Gemini + RAG đơn giản từ DB)
 exports.processQuestion = async (req, res) => {
     try {
         const { question } = req.body;
@@ -102,16 +122,27 @@ exports.processQuestion = async (req, res) => {
             });
         }
 
-        // Lấy context từ VBPL
-        const context = await buildContext(question.trim());
+        const trimmed = question.trim();
 
-        // Gọi Gemini
-        const answer = await callGemini(question.trim(), context);
+        if (USE_GRAPH_RAG) {
+            try {
+                const result = await callGraphRAG(trimmed);
+                return res.json({
+                    answer: result.answer,
+                    sources: result.sources || [],
+                    mode: 'graph_rag',
+                });
+            } catch (graphError) {
+                console.warn('Graph RAG fallback:', graphError.message);
+            }
+        }
 
-        res.json({ answer });
+        const context = await buildContext(trimmed);
+        const answer = await callGemini(trimmed, context);
+
+        res.json({ answer, mode: 'postgres_rag' });
     } catch (error) {
         console.error('Chatbot error:', error.message);
-        // Fallback: trả lời ngắn để không gián đoạn trải nghiệm
         res.status(500).json({
             answer:
                 'Xin lỗi, hệ thống đang bận hoặc thiếu khóa API Gemini. Vui lòng thử lại sau.',

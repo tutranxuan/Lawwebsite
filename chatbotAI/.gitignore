@@ -1,0 +1,13 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Vector store
+python-service/vector_store/
+vector_store/
+
+# IDE
+.idea/
+.vscode/
