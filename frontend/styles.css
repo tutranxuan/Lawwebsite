@@ -1853,6 +1853,16 @@ main {
     display: flex;
 }
 
+.chatbot-window.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    z-index: 9999;
+}
+
 .chatbot-header {
     background: linear-gradient(135deg, #1976d2, #1565c0);
     color: white;
@@ -1868,6 +1878,8 @@ main {
     font-size: 18px;
     font-weight: 600;
 }
+
+.chatbot-header > div { display: flex; gap: 8px; }
 
 .chatbot-close {
     background: none;
@@ -2051,6 +2063,8 @@ main {
         left: 20px;
     }
 }
+
+
 
 /* --- HOME PAGE CUSTOM STYLE --- */
 .home-intro {

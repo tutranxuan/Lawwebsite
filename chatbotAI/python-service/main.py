@@ -30,6 +30,11 @@ rag_service: GraphRAGService | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global rag_service
+    if config.AUTO_INGEST_ON_START:
+        store = FaissVectorStore()
+        should_ingest = config.AUTO_INGEST_CLEAR or store.count() == 0
+        if should_ingest:
+            ingest_all(clear_existing=config.AUTO_INGEST_CLEAR)
     rag_service = GraphRAGService()
     yield
     if rag_service:

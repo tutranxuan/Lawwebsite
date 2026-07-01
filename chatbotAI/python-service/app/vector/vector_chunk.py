@@ -6,7 +6,14 @@ from app.graph import schema as S
 
 def is_vector_leaf(label: str, level: str = "") -> bool:
     lbl = label or level
-    return lbl in S.VECTOR_LEAF_LABELS or level in ("khoan", "diem", "yeu_cau")
+    return lbl in S.VECTOR_LEAF_LABELS or level in (
+        "khoan",
+        "diem",
+        "yeu_cau",
+        "vi_pham",
+        "phuong_tien",
+        "hinh_phat",
+    )
 
 
 def to_faiss_chunk(node: dict, source_file: str, pipeline: str) -> dict:

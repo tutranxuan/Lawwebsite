@@ -46,15 +46,20 @@ def _add_clause_refs(graph: SemanticGraph, clause_id: str, refs: list[dict], doc
         rel = (ref.get("relation") or S.REFERENCES).upper()
         if rel not in S.ALL_RELS:
             rel = S.REFERENCES
+            
         if target_art:
-            to_id = make_id("article", doc_id, str(target_art), target_doc or "ref")
+            target_doc_clean = target_doc.replace("/", "_") if target_doc else "ref"
+            target_doc_id = make_id("document", target_doc_clean) if target_doc else doc_id
+            
+            # ĐỒNG BỘ: Đổi prefix "article" thành "dieu" tương thích Regex parser
+            to_id = make_id("dieu", target_doc_id, str(target_art))
             graph.add_node(
                 S.ARTICLE,
                 to_id,
                 number=str(target_art),
                 title=f"Điều {target_art}",
-                document_number=target_doc,
-                doc_id=doc_id,
+                document_number=target_doc if target_doc else None,
+                doc_id=target_doc_id,
             )
             graph.add_rel(rel, clause_id, to_id, note=ref.get("note", ""))
         elif target_doc:
@@ -74,7 +79,8 @@ def _ingest_articles(
     count = 0
     for art in articles:
         anum = str(art.get("number", ""))
-        art_id = make_id("article", doc_id, anum)
+        # ĐỒNG BỘ: Đổi "article" thành "dieu"
+        art_id = make_id("dieu", doc_id, anum)
         title = (art.get("title") or f"Điều {anum}")[:500]
         full_text = (art.get("full_text") or "")[:12000]
         art_path = path_prefix + [f"Article:{anum}"]
@@ -89,13 +95,14 @@ def _ingest_articles(
             doc_id=doc_id,
             path=" > ".join(art_path),
         )
-        graph.add_rel(S.HAS_ARTICLE, parent_id, art_id)
+        graph.add_rel(S.CO_DIEU, parent_id, art_id)
         count += 1
 
         for cl in art.get("clauses") or []:
             cnum = str(cl.get("number", ""))
             sub = str(cl.get("sub_number") or "")
-            cl_id = make_id("clause", doc_id, anum, cnum, sub or "x")
+            # ĐỒNG BỘ: Thiết lập cấu trúc ID phân cấp chuẩn "dieu_X_khoan_Y" giống Regex
+            cl_id = make_id("khoan", art_id, cnum + sub)
             ctext = (cl.get("text") or "")[:8000]
             cl_path = art_path + [f"Clause:{cnum}{sub}"]
             graph.add_node(
@@ -109,7 +116,7 @@ def _ingest_articles(
                 doc_id=doc_id,
                 path=" > ".join(cl_path),
             )
-            graph.add_rel(S.HAS_CLAUSE, art_id, cl_id)
+            graph.add_rel(S.CO_KHOAN, art_id, cl_id)
             _add_clause_refs(graph, cl_id, cl.get("references") or [], doc_id)
     return count
 
@@ -155,7 +162,7 @@ def from_semantic_result(
                 doc_id=doc_id,
                 path=f"Document > Chapter {ch.get('number')}",
             )
-            graph.add_rel(S.HAS_CHAPTER, doc_id, ch_id)
+            graph.add_rel(S.CO_CHUONG, doc_id, ch_id)
             article_count += _ingest_articles(
                 graph,
                 ch.get("articles") or [],
@@ -204,10 +211,10 @@ def from_regex_tree(doc_id: str, meta: dict, file_name: str, text: str) -> Seman
     for row in rows:
         level_map = {
             "van_ban": S.DOCUMENT,
+            "chuong": S.CHAPTER,
             "dieu": S.ARTICLE,
             "khoan": S.CLAUSE,
-            "diem": S.CLAUSE,
-            "muc": S.CHAPTER,
+            "diem": S.ITEM,
         }
         label = level_map.get(row["level"], S.CLAUSE)
         graph.add_node(
@@ -224,12 +231,12 @@ def from_regex_tree(doc_id: str, meta: dict, file_name: str, text: str) -> Seman
         )
 
     rel_map = {
-        ("van_ban", "dieu"): S.HAS_ARTICLE,
-        ("van_ban", "muc"): S.HAS_CHAPTER,
-        ("muc", "dieu"): S.HAS_ARTICLE,
-        ("dieu", "khoan"): S.HAS_CLAUSE,
-        ("dieu", "diem"): S.HAS_CLAUSE,
-        ("khoan", "diem"): S.HAS_CLAUSE,
+        ("van_ban", "dieu"): S.CO_DIEU,
+        ("van_ban", "muc"): S.CO_CHUONG,
+        ("muc", "dieu"): S.CO_DIEU,
+        ("dieu", "khoan"): S.CO_KHOAN,
+        ("dieu", "diem"): S.CO_DIEM,
+        ("khoan", "diem"): S.CO_DIEM,
     }
     by_id = {r["id"]: r for r in rows}
     for row in rows:
@@ -238,7 +245,7 @@ def from_regex_tree(doc_id: str, meta: dict, file_name: str, text: str) -> Seman
             continue
         parent_level = by_id[pid]["level"]
         child_level = row["level"]
-        rel = rel_map.get((parent_level, child_level), S.HAS_CLAUSE)
+        rel = rel_map.get((parent_level, child_level), S.CO_KHOAN)
         graph.add_rel(rel, pid, row["id"])
 
     return graph
@@ -252,7 +259,7 @@ def add_violations_to_graph(
 ) -> int:
     count = 0
     for i, v in enumerate(violations):
-        vid = make_id("violation", doc_id, str(i), v.get("id_hint", "")[:20])
+        vid = make_id("vi_pham", doc_id, str(i))
         graph.add_node(
             S.VIOLATION,
             vid,
@@ -266,37 +273,35 @@ def add_violations_to_graph(
 
         anum = str(v.get("article_number") or "")
         cnum = str(v.get("clause_number") or "")
-        pt = str(v.get("point") or "")
+        pt = str(v.get("point") or "").strip().lower()
         if anum:
-            cl_id = make_id("clause", doc_id, anum, cnum, pt or "v")
-            if any(n["id"] == cl_id for n in graph.nodes):
-                graph.add_rel(S.DEFINED_IN, vid, cl_id)
+            # SỬA LỖI ĐỒNG BỘ LIÊN KẾT: Định danh ID theo chuẩn phân cấp tiếng Việt đồng bộ với Regex
+            dieu_id = make_id("dieu", doc_id, anum)
+            khoan_id = make_id("khoan", dieu_id, cnum) if cnum else ""
+            diem_id = make_id("diem", khoan_id, pt) if khoan_id and pt else ""
+            
+            target_id = ""
+            existing_ids = {n["id"] for n in graph.nodes}
+            if diem_id and diem_id in existing_ids:
+                target_id = diem_id
+            elif khoan_id and khoan_id in existing_ids:
+                target_id = khoan_id
             else:
-                graph.add_node(
-                    S.CLAUSE,
-                    cl_id,
-                    number=cnum + pt,
-                    text=v.get("description", "")[:500],
-                    full_text=v.get("description", "")[:500],
-                    document_number=doc_number,
-                    doc_id=doc_id,
-                    path=f"Article:{anum} > Clause:{cnum}{pt}",
-                )
-                art_id = make_id("article", doc_id, anum)
-                if not any(n["id"] == art_id for n in graph.nodes):
-                    graph.add_node(S.ARTICLE, art_id, number=anum, title=f"Điều {anum}", doc_id=doc_id, document_number=doc_number)
-                    graph.add_rel(S.HAS_ARTICLE, doc_id, art_id)
-                graph.add_rel(S.HAS_CLAUSE, art_id, cl_id)
-                graph.add_rel(S.DEFINED_IN, vid, cl_id)
+                target_id = dieu_id
+                if dieu_id not in existing_ids:
+                    graph.add_node(S.ARTICLE, dieu_id, number=anum, title=f"Điều {anum}", doc_id=doc_id, document_number=doc_number)
+                    graph.add_rel(S.CO_DIEU, doc_id, dieu_id)
+
+            graph.add_rel(S.DEFINED_IN, vid, target_id)
 
         for veh in v.get("vehicles") or []:
-            veh_id = make_id("vehicle", doc_id, veh.get("type", ""), veh.get("sub_type", ""))
+            veh_id = make_id("phuong_tien", doc_id, veh.get("type", ""), veh.get("sub_type", ""))
             if not any(n["id"] == veh_id for n in graph.nodes):
                 graph.add_node(S.VEHICLE, veh_id, type=veh.get("type", ""), sub_type=veh.get("sub_type", ""))
             graph.add_rel(S.APPLIES_TO, vid, veh_id)
 
         for pen in v.get("penalties") or []:
-            pen_id = make_id("penalty", doc_id, pen.get("type", "")[:25], str(i))
+            pen_id = make_id("hinh_phat", doc_id, str(i), pen.get("type", "")[:20])
             graph.add_node(
                 S.PENALTY,
                 pen_id,

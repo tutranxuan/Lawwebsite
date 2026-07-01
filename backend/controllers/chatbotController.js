@@ -1,6 +1,8 @@
 const { Op } = require('sequelize');
-const fetch = require('node-fetch');
+const nodeFetch = require('node-fetch');
 const LegalDocument = require('../models/LegalDocument');
+
+const fetch = nodeFetch.default || nodeFetch;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';

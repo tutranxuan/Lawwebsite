@@ -112,6 +112,17 @@ def read_document(path: Path) -> str:
     raise ValueError(f"Định dạng không hỗ trợ: {suffix}")
 
 
+def list_attachment_files(path: Path) -> list[Path]:
+    """Tìm file đính kèm được tách ra từ datavbpl, ví dụ attachfile_<stem>/..."""
+    attach_dir = path.parent / f"attachfile_{path.stem}"
+    if not attach_dir.exists() or not attach_dir.is_dir():
+        return []
+    files: list[Path] = []
+    for pattern in ("*.doc", "*.docx"):
+        files.extend(sorted(attach_dir.rglob(pattern)))
+    return files
+
+
 def extract_document_meta(filename: str) -> dict:
     """
     Parse metadata từ tên file: 119_2024_ND-CP_626100.doc

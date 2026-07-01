@@ -19,7 +19,7 @@ class LawChatbot {
                 <div class="chatbot-window" id="chatbot-window">
                     <div class="chatbot-header">
                         <h3>🤖 Tư vấn Luật Giao thông</h3>
-                        <button class="chatbot-close" id="chatbot-close">×</button>
+                        <button id="chatbot-fullscreen">⛶</button> <button class="chatbot-close" id="chatbot-close">×</button>
                     </div>
                     <div class="chatbot-messages" id="chatbot-messages"></div>
                     <div class="chatbot-quick-actions" id="chatbot-quick-actions">
@@ -29,7 +29,7 @@ class LawChatbot {
                         <button class="chatbot-quick-btn" data-question="Thủ tục đăng ký xe">Thủ tục đăng ký xe</button>
                     </div>
                     <div class="chatbot-input-container">
-                        <input type="text" class="chatbot-input" id="chatbot-input" placeholder="Nhập câu hỏi của bạn...">
+                        <textarea class="chatbot-input" id="chatbot-input" placeholder="Nhập câu hỏi của bạn..."></textarea>
                         <button class="chatbot-send" id="chatbot-send">➤</button>
                     </div>
                 </div>
@@ -44,12 +44,16 @@ class LawChatbot {
         const sendBtn = document.getElementById('chatbot-send');
         const input = document.getElementById('chatbot-input');
         const quickBtns = document.querySelectorAll('.chatbot-quick-btn');
+        const fsBtn = document.getElementById('chatbot-fullscreen');
 
         toggleBtn.addEventListener('click', () => this.toggleChatbot());
         closeBtn.addEventListener('click', () => this.toggleChatbot());
         sendBtn.addEventListener('click', () => this.sendMessage());
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendMessage();
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
         });
 
         quickBtns.forEach(btn => {
@@ -58,6 +62,13 @@ class LawChatbot {
                 this.handleUserMessage(question);
             });
         });
+
+        fsBtn.addEventListener('click', () => this.toggleFullscreen());
+    }
+
+    toggleFullscreen() {
+        const window = document.getElementById('chatbot-window');
+        window.classList.toggle('fullscreen');
     }
 
     toggleChatbot() {

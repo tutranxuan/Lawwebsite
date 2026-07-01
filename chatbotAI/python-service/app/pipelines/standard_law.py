@@ -36,6 +36,13 @@ REL_MAP = {
 }
 
 
+def normalize_title_key(value: str) -> str:
+    value = (value or "").lower()
+    value = re.sub(r"[^\w\s]", " ", value, flags=re.UNICODE)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
 def parse_standard_law(
     text: str,
     doc_id: str,
@@ -64,6 +71,7 @@ def parse_standard_law(
             reference_path=ref_path,
             path=ref_path,
             document_number=doc_number,
+            normalized_title=normalize_title_key(title) if label == S.VAN_BAN else "",
             doc_id=doc_id,
             file_name=file_name,
         )
