@@ -1,0 +1,21 @@
+$kind: http-request
+name: Tìm kiếm văn bản pháp luật
+method: GET
+url: '{{baseUrl}}/api/legal-documents/search'
+order: 22000
+queryParams:
+  - key: q
+    value: luật giao thông
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: >-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+
+      pm.test("Response is array or has data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.satisfy(val => Array.isArray(val) || (typeof val === 'object' && val !== null && 'data' in val));
+      });
+
+      pm.test("Response time < 2000ms", () =>
+      pm.expect(pm.response.responseTime).to.be.below(2000));

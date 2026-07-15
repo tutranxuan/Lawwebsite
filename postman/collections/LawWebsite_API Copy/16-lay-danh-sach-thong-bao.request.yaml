@@ -1,0 +1,29 @@
+$kind: http-request
+name: Lấy danh sách thông báo
+method: GET
+url: '{{baseUrl}}/api/notifications'
+order: 16000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: >-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+
+      pm.test("Response is array or has data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        pm.expect(json.notifications).to.be.an('array'); 
+        const notifications = Array.isArray(json) ? json : (json.data || json.notifications);
+        if (notifications && notifications.length > 0) {
+          const notificationId = notifications[0].notification_id || notifications[0].notification_id;
+          if (notificationId) {
+          pm.environment.set("notificationId", notificationId);
+          }
+        }
+      });
+
+      pm.test("Response time < 2000ms", () =>
+      pm.expect(pm.response.responseTime).to.be.below(2000));

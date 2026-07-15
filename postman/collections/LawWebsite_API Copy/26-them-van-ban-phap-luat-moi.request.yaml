@@ -1,0 +1,39 @@
+$kind: http-request
+name: Thêm văn bản pháp luật mới
+method: POST
+url: '{{baseUrl}}/api/legal-documents'
+order: 26000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Luật test",
+      "content": "Nội dung văn bản pháp luật test",
+      "documentTypeId": 1,
+      "issuingAuthority": "Quốc hội",
+      "issuance_date": "2024-01-01",
+      "effective_date": "2025-01-01",
+      "documentNumber": "01/2024/QH"
+      
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200 or 201", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+      pm.test("Response has created data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        const newDocId = json.doc_id || json.doc_id;
+        if (newDocId) {
+          pm.environment.set("documentId", newDocId);
+          console.log("Đã cập nhật documentId mới tạo:", newDocId);
+        }
+      });

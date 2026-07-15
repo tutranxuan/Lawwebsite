@@ -1,0 +1,32 @@
+$kind: http-request
+name: Đăng nhập tài khoản Luật sư
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 42000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "lawyertest3",
+      "password": "1"
+    }
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Login Lawyer Success", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+
+        const resJson = pm.response.json();
+        const lawyerToken = resJson.token || (resJson.data && resJson.data.token);
+
+        if (lawyerToken) {
+          pm.environment.set("lawyerToken", lawyerToken);
+          const lawyerId = resJson.user_id || resJson.id || (resJson.data && resJson.data.id);
+          if (lawyerId) {
+            pm.environment.set("lawyerId", lawyerId);
+          }
+        }
+      });
+    language: text/javascript

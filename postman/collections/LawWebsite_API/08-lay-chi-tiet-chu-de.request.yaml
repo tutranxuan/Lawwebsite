@@ -1,0 +1,14 @@
+$kind: http-request
+name: Lấy chi tiết chủ đề
+method: GET
+url: '{{baseUrl}}/api/topics/{{topicId}}'
+order: 8000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has id", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('topic_id');
+      });
+    language: text/javascript

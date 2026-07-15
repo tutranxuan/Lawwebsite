@@ -19,7 +19,8 @@ class LawChatbot {
                 <div class="chatbot-window" id="chatbot-window">
                     <div class="chatbot-header">
                         <h3>🤖 Tư vấn Luật Giao thông</h3>
-                        <button id="chatbot-fullscreen">⛶</button> <button class="chatbot-close" id="chatbot-close">×</button>
+                        <button id="chatbot-fullscreen">⛶</button> 
+                        <button class="chatbot-close" id="chatbot-close">×</button>
                     </div>
                     <div class="chatbot-messages" id="chatbot-messages"></div>
                     <div class="chatbot-quick-actions" id="chatbot-quick-actions">

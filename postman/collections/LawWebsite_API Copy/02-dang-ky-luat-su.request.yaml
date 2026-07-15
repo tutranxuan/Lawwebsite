@@ -1,0 +1,47 @@
+$kind: http-request
+name: Đăng ký luật sư
+method: POST
+url: '{{baseUrl}}/api/auth/register-lawyer'
+order: 2000
+body:
+  type: formdata
+  content:
+    - type: text
+      key: username
+      value: lawyertest3
+      disabled: false
+    - type: text
+      key: email
+      value: lawyer3@example.com
+      disabled: false
+    - type: text
+      key: password
+      value: '1'
+      disabled: false
+    - type: text
+      key: fullName
+      value: Luật Sư Test
+      disabled: false
+    - type: text
+      key: licenseNumber
+      value: LS-001-2024
+      disabled: false
+    - type: text
+      key: specialization
+      value: Luật dân sự
+      disabled: false
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200 or 201", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+      pm.test("Response has message", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('message');
+        const newLawyerId = json.user_id || json.id;
+        if (newLawyerId) {
+          pm.environment.set("lawyerId", newLawyerId);
+        }
+      });
+    language: text/javascript

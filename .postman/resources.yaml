@@ -1,0 +1,8 @@
+workspace:
+  id: ade2fcc0-6fee-48b7-8aec-157323c5cef8
+cloudResources:
+  collections:
+    ../postman/collections/LawWebsite API: 56565565-9d83c89c-6fc6-4f84-a972-894eaf82aaf5
+    ../postman/collections/LawWebsite_API: 56565565-ef4d60d7-f107-4223-8ac9-00649eb2b1b0
+  environments:
+    ../postman/environments/LawWebsite Local.environment.yaml: 56565565-65a0fd13-bf52-400f-89a5-777b41387a7b

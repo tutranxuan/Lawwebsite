@@ -1,0 +1,25 @@
+$kind: http-request
+name: Đăng ký user thường
+method: POST
+url: '{{baseUrl}}/api/auth/register'
+order: 1000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "testuser3",
+      "email": "test3@example.com",
+      "password": "1",
+      "fullName": "Người Dùng Test"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      pm.test("Response has message", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('message');
+      });
+    language: text/javascript

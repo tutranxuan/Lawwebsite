@@ -1,0 +1,23 @@
+$kind: http-request
+name: Lấy danh sách chủ đề
+method: GET
+url: '{{baseUrl}}/api/topics'
+order: 6000
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+
+      pm.test("Response has topics data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        pm.expect(json.topics).to.be.an('array'); 
+        if (json.topics && json.topics.length > 0) {
+          const firstTopicId = json.topics[0].topic_id || json.topics[0].topic_id;
+          pm.environment.set("topicId", firstTopicId);
+        }
+      });
+
+      pm.test("Response time < 2000ms", () =>
+      pm.expect(pm.response.responseTime).to.be.below(2000));
+    language: text/javascript

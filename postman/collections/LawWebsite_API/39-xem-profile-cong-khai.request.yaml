@@ -1,0 +1,14 @@
+$kind: http-request
+name: Xem profile công khai
+method: GET
+url: '{{baseUrl}}/api/lawyers/public/{{userId}}'
+order: 39000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has id", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('user_id');
+      });
+    language: text/javascript

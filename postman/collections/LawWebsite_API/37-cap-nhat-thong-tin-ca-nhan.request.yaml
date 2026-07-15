@@ -1,0 +1,26 @@
+$kind: http-request
+name: Cập nhật thông tin cá nhân
+method: PUT
+url: '{{baseUrl}}/api/users/me'
+order: 37000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "Người Dùng Đã Cập Nhật",
+      "phone": "0901234567"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has updated data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+      });

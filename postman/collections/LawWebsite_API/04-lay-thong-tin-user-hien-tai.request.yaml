@@ -1,0 +1,24 @@
+$kind: http-request
+name: Lấy thông tin user hiện tại
+method: GET
+url: '{{baseUrl}}/api/auth/me'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    token: '{{json_web_token_0f65}}'
+headers:
+  Authorization: 'Bearer {{token}}'
+body:
+  type: json
+  content: ''
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has user data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('user_id');
+        pm.expect(json).to.have.property('email');
+      });
+    language: text/javascript

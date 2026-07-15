@@ -1,0 +1,17 @@
+$kind: http-request
+name: Lấy số thông báo chưa đọc
+method: GET
+url: '{{baseUrl}}/api/notifications/unread-count'
+order: 17000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has count", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('count');
+      });

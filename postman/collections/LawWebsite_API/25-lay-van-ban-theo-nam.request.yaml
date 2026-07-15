@@ -1,0 +1,18 @@
+$kind: http-request
+name: Lấy văn bản theo năm
+method: GET
+url: '{{baseUrl}}/api/legal-documents/year/2024'
+order: 25000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: >-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+
+      pm.test("Response is array or has data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.satisfy(val => Array.isArray(val) || (typeof val === 'object' && val !== null && 'data' in val));
+      });
+
+      pm.test("Response time < 2000ms", () =>
+      pm.expect(pm.response.responseTime).to.be.below(2000));

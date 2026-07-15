@@ -1,0 +1,22 @@
+$kind: http-request
+name: Lấy danh sách văn bản pháp luật
+method: GET
+url: '{{baseUrl}}/api/legal-documents'
+order: 21000
+scripts:
+  - type: afterResponse
+    code: >-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+
+      pm.test("Response is array or has data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.satisfy(val => Array.isArray(val) || (typeof val === 'object' && val !== null && 'data' in val));
+        const docs = Array.isArray(json) ? json : json.data;
+      if (docs && docs.length > 0) {pm.environment.set("documentId",
+      docs[0].doc_id);}
+
+      });
+
+      pm.test("Response time < 2000ms", () =>
+      pm.expect(pm.response.responseTime).to.be.below(2000));
+    language: text/javascript

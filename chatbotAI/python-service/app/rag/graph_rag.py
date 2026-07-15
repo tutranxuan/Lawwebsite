@@ -81,7 +81,7 @@ class GraphRAGService:
             Trả về JSON: {{"intent": "...", "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa mở rộng"]}}
             """
             try:
-                # Sử dụng _gemini_generate đã có sẵn trong class của bạn
+                # Sử dụng _gemini_generate đã có sẵn trong class
                 response_text = self._gemini_generate(prompt, model=config.GEMINI_MODEL)
                 return self._json_from_text(response_text)
             except Exception:

@@ -1,0 +1,47 @@
+$kind: http-request
+name: Thêm biển báo mới
+method: POST
+url: "{{baseUrl}}/api/traffic-signs"
+order: 32000
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: Biển báo cấm đi ngược chiều
+      disabled: false
+    - type: text
+      key: sign_code
+      value: P.102
+      disabled: false
+    - type: text
+      key: description
+      value: Cấm các loại xe đi ngược chiều
+      disabled: false
+    - type: text
+      key: categoryId
+      value: "1"
+      disabled: false
+    - type: file
+      key: image
+      src:
+        - postman-cloud:///1f17f023-792b-4660-a909-7a961531067c
+      description: ""
+      disabled: false
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200 or 201", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+      pm.test("Response has created data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        const newSignId = json.sign_id || json.sign_id;
+        if (newSignId) {
+          pm.environment.set("trafficSignId", newSignId);
+        }
+      });
+    language: text/javascript

@@ -1,0 +1,31 @@
+$kind: http-request
+name: Cập nhật thông tin luật sư
+method: PUT
+url: '{{baseUrl}}/api/lawyers/me'
+order: 44000
+headers:
+  Authorization: 'Bearer {{lawyerToken}}'
+body:
+  type: formdata
+  content:
+    - type: text
+      key: specialization
+      value: Luật hình sự
+    - type: text
+      key: experience
+      value: 5 năm kinh nghiệm
+    - type: text
+      key: bio
+      value: Luật sư chuyên về luật hình sự và dân sự
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has updated data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+      });
+    language: text/javascript
+  - type: beforeRequest
+    code: ''
+    language: text/javascript

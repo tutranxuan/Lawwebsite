@@ -1,0 +1,17 @@
+$kind: http-request
+name: Đóng chủ đề
+method: PUT
+url: '{{baseUrl}}/api/topics/{{topicId}}/close'
+order: 10000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has message or data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+      });

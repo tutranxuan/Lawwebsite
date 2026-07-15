@@ -1,0 +1,19 @@
+$kind: http-request
+name: Lấy thông tin luật sư của mình
+method: GET
+url: '{{baseUrl}}/api/lawyers/me'
+order: 43000
+headers:
+  Authorization: 'Bearer {{lawyerToken}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has id", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('user_id');
+      });
+    language: text/javascript
+  - type: beforeRequest
+    code: ''
+    language: text/javascript

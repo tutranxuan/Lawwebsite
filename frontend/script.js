@@ -123,7 +123,7 @@ function showDocumentDetails(document) {
         <p><b>Tóm tắt:</b> ${document.summary || ''}</p>
         <div class="document-content"><b>Nội dung:</b><br>${document.content || ''}</div>
         ${document.file_path ? `<a href="${document.file_path}" download target="_blank">Tải về văn bản</a><br>` : ''}
-        <button onclick="hideDocumentDetails()">Đóng</button>
+        <button type="button" onclick="hideDocumentDetails()">Đóng</button>
     `;
 }
 
@@ -340,6 +340,44 @@ if (editSignForm) {
             alert('Cập nhật thành công!');
         } catch (error) {
             alert('Có lỗi khi cập nhật biển báo.');
+        }
+    }
+}
+
+const addSignForm = document.getElementById('add-sign-form');
+if (addSignForm) {
+    addSignForm.onsubmit = async function(e) {
+        e.preventDefault();
+        
+        // Lấy các giá trị từ form
+        const name = document.getElementById('name').value;
+        const sign_code = document.getElementById('sign_code').value;
+        const description = document.getElementById('description').value;
+        // Lưu ý: ID này phải khớp với ID bạn đã đổi thành 'edit-sign-category' để dùng chung hàm load
+        const category_id = document.getElementById('edit-sign-category').value; 
+        const imageFile = document.getElementById('image').files[0];
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('sign_code', sign_code);
+        formData.append('description', description);
+        formData.append('category_id', category_id);
+        if (imageFile) formData.append('image', imageFile);
+
+        try {
+            const response = await fetch(`http://localhost:4000/api/traffic-signs/`, {
+                method: 'POST', // Sử dụng POST để tạo mới
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Lỗi khi thêm biển báo');
+            
+            alert('Thêm biển báo thành công!');
+            // Chuyển hướng về trang danh sách sau khi thêm thành công
+            window.location.href = 'signs.html'; 
+        } catch (error) {
+            console.error(error);
+            alert('Có lỗi khi thêm biển báo.');
         }
     }
 }

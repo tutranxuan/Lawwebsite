@@ -1,0 +1,22 @@
+name: LawWebsite Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:4000'
+  - key: token
+    value: ''
+  - key: userId
+    value: '13'
+  - key: topicId
+    value: '10'
+  - key: commentId
+    value: '20'
+  - key: documentId
+    value: 'null'
+  - key: trafficSignId
+    value: '1'
+  - key: lawyerId
+    value: '25'
+  - key: notificationId
+    value: '1'
+  - key: lawyerToken
+    value: ''

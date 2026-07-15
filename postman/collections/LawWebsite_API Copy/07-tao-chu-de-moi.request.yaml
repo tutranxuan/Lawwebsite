@@ -1,0 +1,32 @@
+$kind: http-request
+name: Tạo chủ đề mới
+method: POST
+url: '{{baseUrl}}/api/topics'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+body:
+  type: formdata
+  content:
+    - key: title
+      type: text
+      value: Câu hỏi về luật giao thông
+    - key: content
+      type: text
+      value: Nội dung câu hỏi về luật giao thông đường bộ
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200 or 201", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+      pm.test("Response has created data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        const newTopicId = json.topic_id || json.id;
+        if (newTopicId) {
+          pm.environment.set("topicId", newTopicId);
+        }
+      });

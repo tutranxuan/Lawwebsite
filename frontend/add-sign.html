@@ -26,11 +26,9 @@
                 <a href="#" class="active">Công cụ hỗ trợ</a>
                 <ul class="submenu-tools">
                     <li><a href="alcohol.html">Tính nồng độ cồn</a></li>
-                    <li><a href="penalty.html">Tra cứu xử phạt</a></li>
                     <li><a href="signs.html">Tra cứu biển báo</a></li>
                 </ul>
             </li>
-            <li><a href="index.html#page-forms">Biểu mẫu & hướng dẫn</a></li>
             <li><a href="index.html#page-community">Cộng đồng</a></li>
         </ul>
     </nav>
@@ -58,6 +56,17 @@
                             <!-- Options will be populated by JS -->
                         </select>
                     </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Tạm thời đặt ID để hàm cũ nhận diện được
+                            const select = document.getElementById('category_id');
+                            if (select) {
+                                select.id = 'edit-sign-category';
+                                // Gọi hàm với selectedId = null vì trang này là "Thêm mới"
+                                loadEditCategories(null); 
+                            }
+                        });
+                    </script>
                     <div class="form-group">
                         <label for="image">Ảnh biển báo</label>
                         <input type="file" id="image" name="image" accept="image/*">
@@ -67,7 +76,7 @@
                         </div>
                     </div>
                     <div class="action-buttons">
-                        <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                        <button type="submit" class="btn-primary">Thêm biển báo</button>
                         <button type="button" onclick="window.location.href='signs.html'" class="btn-secondary">Hủy</button>
                     </div>
                 </form>

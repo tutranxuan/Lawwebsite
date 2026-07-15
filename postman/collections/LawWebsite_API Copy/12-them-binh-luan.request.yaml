@@ -1,0 +1,29 @@
+$kind: http-request
+name: Thêm bình luận
+method: POST
+url: '{{baseUrl}}/api/comments/{{topicId}}'
+order: 12000
+headers:
+  Authorization: 'Bearer {{token}}'
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "content": "Đây là bình luận test"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200 or 201", () => {
+        pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+      pm.test("Response has created data", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.be.an('object');
+        const newCommentId = json.comment_id || json.id;
+        if (newCommentId) {
+          pm.environment.set("commentId", newCommentId);
+        }
+      });
+    language: text/javascript

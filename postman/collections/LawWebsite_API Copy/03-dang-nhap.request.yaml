@@ -1,0 +1,28 @@
+$kind: http-request
+name: Đăng nhập
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 3000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "admin",
+      "password": "1"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      pm.test("Response has token", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('token');
+        pm.environment.set('token', json.token);
+      });
+      pm.test("Response has user info", () => {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property('user');
+      });
+    language: text/javascript

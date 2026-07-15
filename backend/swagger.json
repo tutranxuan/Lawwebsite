@@ -1,0 +1,1267 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "version" : "1.0",
+    "title" : "LawWebsite_API"
+  },
+  "host" : "localhost:4000",
+  "basePath" : "/api",
+  "securityDefinitions" : {
+    "UserToken" : {
+      "type" : "apiKey",
+      "name" : "Authorization",
+      "in" : "header"
+    },
+    "LawyerToken" : {
+      "type" : "apiKey",
+      "name" : "Authorization",
+      "in" : "header"
+    }
+  },
+  "schemes" : [ "http" ],
+  "consumes" : [ "application/json" ],
+  "produces" : [ "application/json" ],
+  "security" : [ {
+    "UserToken" : [ ]
+  } ],
+  "tags" : [ {
+    "name" : "Auth",
+    "description" : "Quản lý tài khoản và xác thực"
+  }, {
+    "name" : "Chatbot",
+    "description" : "Tương tác với chatbot AI"
+  }, {
+    "name" : "Topics",
+    "description" : "Quản lý chủ đề thảo luận"
+  }, {
+    "name" : "Comments",
+    "description" : "Quản lý bình luận trong chủ đề"
+  }, {
+    "name" : "Notifications",
+    "description" : "Quản lý thông báo người dùng"
+  }, {
+    "name" : "Legal Documents",
+    "description" : "Quản lý văn bản pháp luật"
+  }, {
+    "name" : "Traffic Signs",
+    "description" : "Quản lý biển báo giao thông"
+  }, {
+    "name" : "Users & Lawyers",
+    "description" : "Quản lý người dùng và duyệt luật sư"
+  } ],
+  "paths" : {
+    "/auth/register" : {
+      "post" : {
+        "summary" : "Đăng ký user thường",
+        "tags" : [ "Auth" ],
+        "operationId" : "Đăngkýuserthường",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "security" : [ ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/RegisterUserRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Đăng ký thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/auth/register-lawyer" : {
+      "post" : {
+        "summary" : "Đăng ký luật sư",
+        "tags" : [ "Auth" ],
+        "operationId" : "Đăngkýluậtsư",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/x-www-form-urlencoded" ],
+        "security" : [ ],
+        "parameters" : [ {
+          "name" : "username",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "email",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "password",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "fullName",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "licenseNumber",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "specialization",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Đăng ký thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/auth/login" : {
+      "post" : {
+        "summary" : "Đăng nhập",
+        "tags" : [ "Auth" ],
+        "operationId" : "Đăngnhập",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "security" : [ ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/LoginRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Đăng nhập thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/auth/me" : {
+      "get" : {
+        "summary" : "Lấy thông tin user hiện tại",
+        "tags" : [ "Auth" ],
+        "operationId" : "Lấythôngtinuserhiệntại",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "security" : [ {
+          "UserToken" : [ ]
+        } ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Lấy thông tin thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/chatbot" : {
+      "post" : {
+        "summary" : "Gửi câu hỏi cho chatbot",
+        "tags" : [ "Chatbot" ],
+        "operationId" : "Gửicâuhỏichochatbot",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/ChatbotRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/topics" : {
+      "get" : {
+        "summary" : "Lấy danh sách chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Lấydanhsáchchủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Tạo chủ đề mới",
+        "tags" : [ "Topics" ],
+        "operationId" : "Tạochủđềmới",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/x-www-form-urlencoded" ],
+        "parameters" : [ {
+          "name" : "title",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "content",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/topics/{topicId}" : {
+      "get" : {
+        "summary" : "Lấy chi tiết chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Lấychitiếtchủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "topicId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Xóa chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Xóachủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "topicId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/topics/{topicId}/like" : {
+      "post" : {
+        "summary" : "Like/unlike chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Like/unlikechủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "topicId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/topics/{topicId}/close" : {
+      "put" : {
+        "summary" : "Đóng chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Đóngchủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "topicId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/topics/{topicId}/open" : {
+      "put" : {
+        "summary" : "Mở lại chủ đề",
+        "tags" : [ "Topics" ],
+        "operationId" : "Mởlạichủđề",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "topicId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/comments/{id}/" : {
+      "post" : {
+        "summary" : "Thêm bình luận",
+        "tags" : [ "Comments" ],
+        "operationId" : "Thêmbìnhluận",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/CommentRequest"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/comments/like/{commentId}" : {
+      "post" : {
+        "summary" : "Like/unlike bình luận",
+        "tags" : [ "Comments" ],
+        "operationId" : "Like/unlikebìnhluận",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "commentId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/comments/{commentId}" : {
+      "delete" : {
+        "summary" : "Xóa bình luận",
+        "tags" : [ "Comments" ],
+        "operationId" : "Xóabìnhluận",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "commentId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/notifications" : {
+      "get" : {
+        "summary" : "Lấy danh sách thông báo",
+        "tags" : [ "Notifications" ],
+        "operationId" : "Lấydanhsáchthôngbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/notifications/unread-count" : {
+      "get" : {
+        "summary" : "Lấy số thông báo chưa đọc",
+        "tags" : [ "Notifications" ],
+        "operationId" : "Lấysốthôngbáochưađọc",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/notifications/{notificationId}/read" : {
+      "put" : {
+        "summary" : "Đánh dấu một thông báo đã đọc",
+        "tags" : [ "Notifications" ],
+        "operationId" : "Đánhdấumộtthôngbáođãđọc",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "notificationId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/notifications/mark-all-read" : {
+      "put" : {
+        "summary" : "Đánh dấu tất cả đã đọc",
+        "tags" : [ "Notifications" ],
+        "operationId" : "Đánhdấutấtcảđãđọc",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/document-types" : {
+      "get" : {
+        "summary" : "Lấy tất cả loại văn bản",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Lấytấtcảloạivănbản",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/legal-documents" : {
+      "get" : {
+        "summary" : "Lấy danh sách văn bản pháp luật",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Lấydanhsáchvănbảnphápluật",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Thêm văn bản pháp luật mới",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Thêmvănbảnphápluậtmới",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/CreateLegalDocumentRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/legal-documents/search" : {
+      "get" : {
+        "summary" : "Tìm kiếm văn bản pháp luật",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Tìmkiếmvănbảnphápluật",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/legal-documents/authorities" : {
+      "get" : {
+        "summary" : "Lấy danh sách cơ quan ban hành",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Lấydanhsáchcơquanbanhành",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/legal-documents/{documentId}" : {
+      "get" : {
+        "summary" : "Lấy chi tiết văn bản pháp luật",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Lấychitiếtvănbảnphápluật",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "documentId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Sửa văn bản pháp luật",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Sửavănbảnphápluật",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/UpdateLegalDocumentRequest"
+          }
+        }, {
+          "name" : "documentId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Xóa văn bản pháp luật",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Xóavănbảnphápluật",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "documentId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/legal-documents/year/{nam}" : {
+      "get" : {
+        "summary" : "Lấy văn bản theo năm",
+        "tags" : [ "Legal Documents" ],
+        "operationId" : "Lấyvănbảntheonăm",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "nam",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/traffic-signs/categories/all" : {
+      "get" : {
+        "summary" : "Lấy tất cả loại biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Lấytấtcảloạibiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/traffic-signs" : {
+      "get" : {
+        "summary" : "Lấy tất cả biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Lấytấtcảbiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Thêm biển báo mới",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Thêmbiểnbáomới",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "multipart/form-data" ],
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "sign_code",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "description",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "categoryId",
+          "in" : "formData",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int32",
+          "description" : ""
+        }, {
+          "name" : "image",
+          "in" : "formData",
+          "required" : true,
+          "type" : "file",
+          "format" : "file",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/traffic-signs/search" : {
+      "get" : {
+        "summary" : "Tìm kiếm biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Tìmkiếmbiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/traffic-signs/{trafficSignId}" : {
+      "get" : {
+        "summary" : "Lấy chi tiết biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Lấychitiếtbiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "trafficSignId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Cập nhật biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Cậpnhậtbiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/UpdateTrafficSignRequest"
+          }
+        }, {
+          "name" : "trafficSignId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Xóa biển báo",
+        "tags" : [ "Traffic Signs" ],
+        "operationId" : "Xóabiểnbáo",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "trafficSignId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/users" : {
+      "get" : {
+        "summary" : "Lấy danh sách user (admin)",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Lấydanhsáchuser(admin)",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/users/me" : {
+      "put" : {
+        "summary" : "Cập nhật thông tin cá nhân",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Cậpnhậtthôngtincánhân",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/UpdateProfileRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/users/{userId}/status" : {
+      "put" : {
+        "summary" : "Admin cập nhật status user",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Admincậpnhậtstatususer",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "Body",
+          "in" : "body",
+          "required" : true,
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/UpdateUserStatusRequest"
+          }
+        }, {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/public/{userId}" : {
+      "get" : {
+        "summary" : "Xem profile công khai",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Xemprofilecôngkhai",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/pending" : {
+      "get" : {
+        "summary" : "Lấy danh sách luật sư chờ duyệt",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Lấydanhsáchluậtsưchờduyệt",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/{lawyerId}/approve" : {
+      "put" : {
+        "summary" : "Duyệt luật sư",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Duyệtluậtsư",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "lawyerId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/me" : {
+      "get" : {
+        "summary" : "Lấy thông tin luật sư của mình",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Lấythôngtinluậtsưcủamình",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "security" : [ {
+          "LawyerToken" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Cập nhật thông tin luật sư",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Cậpnhậtthôngtinluậtsư",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/x-www-form-urlencoded" ],
+        "security" : [ {
+          "LawyerToken" : [ ]
+        } ],
+        "parameters" : [ {
+          "name" : "specialization",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "experience",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        }, {
+          "name" : "bio",
+          "in" : "formData",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/{lawyerId}" : {
+      "get" : {
+        "summary" : "Lấy thông tin luật sư theo ID",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "LấythôngtinluậtsưtheoID",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "lawyerId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    },
+    "/lawyers/{lawyerId}/reject" : {
+      "put" : {
+        "summary" : "Từ chối luật sư",
+        "tags" : [ "Users & Lawyers" ],
+        "operationId" : "Từchốiluậtsư",
+        "deprecated" : false,
+        "produces" : [ "application/json" ],
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "lawyerId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "description" : ""
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Thành công",
+            "headers" : { }
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "RegisterUserRequest" : {
+      "title" : "ĐăngkýuserthườngRequest",
+      "example" : {
+        "username" : "testuser3",
+        "email" : "test3@example.com",
+        "password" : "1",
+        "fullName" : "Người Dùng Test"
+      },
+      "type" : "object",
+      "properties" : {
+        "username" : {
+          "type" : "string"
+        },
+        "email" : {
+          "type" : "string"
+        },
+        "password" : {
+          "type" : "string"
+        },
+        "fullName" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "username", "email", "password", "fullName" ]
+    },
+    "LoginRequest" : {
+      "title" : "ĐăngnhậpRequest",
+      "example" : {
+        "username" : "admin",
+        "password" : "1"
+      },
+      "type" : "object",
+      "properties" : {
+        "username" : {
+          "type" : "string"
+        },
+        "password" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "username", "password" ]
+    },
+    "ChatbotRequest" : {
+      "title" : "GửicâuhỏichochatbotRequest",
+      "example" : {
+        "question" : "Tốc độ tối đa trong khu dân cư là bao nhiêu?"
+      },
+      "type" : "object",
+      "properties" : {
+        "question" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "question" ]
+    },
+    "CommentRequest" : {
+      "title" : "ThêmbìnhluậnRequest",
+      "example" : {
+        "content" : "Đây là bình luận test"
+      },
+      "type" : "object",
+      "properties" : {
+        "content" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "content" ]
+    },
+    "CreateLegalDocumentRequest" : {
+      "title" : "ThêmvănbảnphápluậtmớiRequest",
+      "example" : {
+        "title" : "Luật test",
+        "content" : "Nội dung văn bản pháp luật test",
+        "documentTypeId" : 1,
+        "issuingAuthority" : "Quốc hội",
+        "issuance_date" : "2024-01-01",
+        "effective_date" : "2025-01-01",
+        "documentNumber" : "01/2024/QH"
+      },
+      "type" : "object",
+      "properties" : {
+        "title" : {
+          "type" : "string"
+        },
+        "content" : {
+          "type" : "string"
+        },
+        "documentTypeId" : {
+          "type" : "integer",
+          "format" : "int32"
+        },
+        "issuingAuthority" : {
+          "type" : "string"
+        },
+        "issuance_date" : {
+          "type" : "string"
+        },
+        "effective_date" : {
+          "type" : "string"
+        },
+        "documentNumber" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "title", "content", "documentTypeId", "issuingAuthority", "issuance_date", "effective_date", "documentNumber" ]
+    },
+    "UpdateLegalDocumentRequest" : {
+      "title" : "SửavănbảnphápluậtRequest",
+      "example" : {
+        "title" : "Luật test (đã cập nhật)",
+        "content" : "Nội dung văn bản pháp luật đã được cập nhật"
+      },
+      "type" : "object",
+      "properties" : {
+        "title" : {
+          "type" : "string"
+        },
+        "content" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "title", "content" ]
+    },
+    "UpdateTrafficSignRequest" : {
+      "title" : "CậpnhậtbiểnbáoRequest",
+      "example" : {
+        "name" : "Biển báo cấm đi ngược chiều (đã cập nhật)",
+        "description" : "Mô tả đã được cập nhật"
+      },
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "name", "description" ]
+    },
+    "UpdateProfileRequest" : {
+      "title" : "CậpnhậtthôngtincánhânRequest",
+      "example" : {
+        "fullName" : "Người Dùng Đã Cập Nhật",
+        "phone" : "0901234567"
+      },
+      "type" : "object",
+      "properties" : {
+        "fullName" : {
+          "type" : "string"
+        },
+        "phone" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "fullName", "phone" ]
+    },
+    "UpdateUserStatusRequest" : {
+      "title" : "AdmincậpnhậtstatususerRequest",
+      "example" : {
+        "status" : "Active"
+      },
+      "type" : "object",
+      "properties" : {
+        "status" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "status" ]
+    },
+    "LoginLawyerRequest" : {
+      "title" : "ĐăngnhậptàikhoảnLuậtsưRequest",
+      "example" : {
+        "username" : "kai2604",
+        "password" : "1"
+      },
+      "type" : "object",
+      "properties" : {
+        "username" : {
+          "type" : "string"
+        },
+        "password" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "username", "password" ]
+    }
+  }
+}
